@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.homebase.ui.screens.HomeScreen
+import com.example.homebase.ui.screens.CurrencyScreen
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -18,6 +19,9 @@ fun AppNavGraph(navController: NavHostController) {
         composable(Screen.Settings.route) {
             // Simple Placeholder for Settings Screen
             androidx.compose.material3.Text("Settings Screen")
+        }
+        composable(route = "currency_screen") {
+            CurrencyScreen()
         }
     }
 }

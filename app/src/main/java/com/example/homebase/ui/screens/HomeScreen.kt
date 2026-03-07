@@ -1,5 +1,6 @@
 package com.example.homebase.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.*
@@ -73,7 +74,11 @@ fun HomeScreen(navController: NavHostController) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(gridItems) { (title, icon) ->
-                    DashboardCard(title, icon)
+                    DashboardCard(title, icon) {
+                        if (title == "Currency") {
+                            navController.navigate("currency_screen")
+                        }
+                    }
                 }
             }
         }
@@ -98,9 +103,11 @@ fun ClassCard() {
 }
 
 @Composable
-fun DashboardCard(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+fun DashboardCard(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick:() -> Unit = {}) {
     Card(
-        modifier = Modifier.aspectRatio(1f),
+        modifier = Modifier
+            .aspectRatio(1f)
+            .clickable{ onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
