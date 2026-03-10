@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.homebase.data.view.CurrencyViewModel
 import androidx.compose.material3.CircularProgressIndicator
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CurrencyScreen(viewModel: CurrencyViewModel = viewModel()) {
