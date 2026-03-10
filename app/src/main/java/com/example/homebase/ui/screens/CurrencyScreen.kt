@@ -7,6 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.homebase.data.view.CurrencyViewModel
+import androidx.compose.material3.CircularProgressIndicator
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CurrencyScreen(viewModel: CurrencyViewModel = viewModel()) {
@@ -27,9 +29,10 @@ fun CurrencyScreen(viewModel: CurrencyViewModel = viewModel()) {
             modifier = Modifier.fillMaxWidth()
         )
 
+
         Spacer(modifier = Modifier.height(16.dp))
 
-        // FROM Dropdown
+        // FROM Currency Dropdown
         ExposedDropdownMenuBox(
             expanded = expandedFrom,
             onExpandedChange = { expandedFrom = !expandedFrom }
@@ -58,7 +61,7 @@ fun CurrencyScreen(viewModel: CurrencyViewModel = viewModel()) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // TO Dropdown
+        // TO Currency Dropdown
         ExposedDropdownMenuBox(
             expanded = expandedTo,
             onExpandedChange = { expandedTo = !expandedTo }
@@ -84,15 +87,31 @@ fun CurrencyScreen(viewModel: CurrencyViewModel = viewModel()) {
             }
         }
 
+        if (state.errorMessage != null) {
+            Text(
+                text = state.errorMessage,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
-        // SUBMIT BUTTON
         Button(
             onClick = { viewModel.convert() },
             modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium
+            enabled = !state.isLoading
         ) {
-            Text("Convert")
+            if (state.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Convert")
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -104,7 +123,7 @@ fun CurrencyScreen(viewModel: CurrencyViewModel = viewModel()) {
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
                 Text("Result", style = MaterialTheme.typography.labelLarge)
-                Text("${state.convertedAmount} ${state.toCurrency}",
+                Text("${state.convertedAmount} ${state.displayCurrency}",
                     style = MaterialTheme.typography.displaySmall)
             }
         }

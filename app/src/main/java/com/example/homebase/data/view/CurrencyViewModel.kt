@@ -9,7 +9,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class CurrencyViewModel : ViewModel() {
-    // Setup Retrofit
+    // Setup Retrofit for api requests
     private val api = Retrofit.Builder()
         .baseUrl("https://v6.exchangerate-api.com/")
         .addConverterFactory(GsonConverterFactory.create())
@@ -36,13 +36,20 @@ class CurrencyViewModel : ViewModel() {
 
     fun fetchRates(base: String) {
         viewModelScope.launch {
+            state = state.copy(isLoading = true, errorMessage = null) // Start loading
             try {
                 val response = api.getLatestRates(base)
                 if (response.isSuccessful) {
-                    state = state.copy(rates = response.body()?.conversion_rates ?: emptyMap())
+                    state = state.copy(
+                        rates = response.body()?.conversion_rates ?: emptyMap(),
+                        isLoading = false
+                    )
+                } else {
+                    state = state.copy(isLoading = false, errorMessage = "API Error: ${response.code()}")
                 }
             } catch (e: Exception) {
-                // Handle error (e.g., no internet)
+                // catches internet timeout, airplane mode, ...
+                state = state.copy(isLoading = false, errorMessage = "Check your internet connection")
             }
         }
     }
@@ -51,14 +58,20 @@ class CurrencyViewModel : ViewModel() {
         val rate = state.rates[state.toCurrency] ?: 1.0
         val amt = state.amount.toDoubleOrNull() ?: 0.0
         val result = amt * rate
-        state = state.copy(convertedAmount = String.format("%.2f", result))
+        state = state.copy(
+            convertedAmount = String.format("%.2f", result),
+            displayCurrency = state.toCurrency
+        )
     }
 }
 
 data class CurrencyState(
     val amount: String = "",
-    val fromCurrency: String = "CAD", // Set default to CAD
+    val fromCurrency: String = "CAD",
     val toCurrency: String = "USD",
+    val displayCurrency: String = "USD",
     val convertedAmount: String = "0.00",
-    val rates: Map<String, Double> = emptyMap()
+    val rates: Map<String, Double> = emptyMap(),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
 )
