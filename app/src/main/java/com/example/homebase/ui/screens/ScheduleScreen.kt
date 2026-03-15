@@ -24,11 +24,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.homebase.data.view.ScheduleViewModel
+import com.example.homebase.ui.navigation.Screen
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import androidx.navigation.NavController
 
 @Composable
-fun ScheduleScreen(viewModel: ScheduleViewModel = viewModel()) {
+fun ScheduleScreen(navController: NavController, viewModel: ScheduleViewModel = viewModel()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -55,11 +57,11 @@ fun ScheduleScreen(viewModel: ScheduleViewModel = viewModel()) {
 
         // Bottom Class List Section
         if (viewModel.filteredActivities.isNotEmpty()) {
-            ActivityListSection(viewModel)
+            ActivityListSection(navController, viewModel)
         } else {
             // "Add to Schedule" button for empty days
             Button(
-                onClick = { /* Handle Add */ }, // TODO: add functionality --> iteration 2
+                onClick = { navController.navigate(Screen.AddSchedule.route) }, // TODO: add functionality --> iteration 2
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -75,7 +77,7 @@ fun ScheduleScreen(viewModel: ScheduleViewModel = viewModel()) {
 }
 
 @Composable
-fun ActivityListSection(viewModel: ScheduleViewModel) {
+fun ActivityListSection(navController: NavController, viewModel: ScheduleViewModel) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
@@ -114,7 +116,7 @@ fun ActivityListSection(viewModel: ScheduleViewModel) {
             }
 
             Button(
-                onClick = { /* Handle Add */ },
+                onClick = { navController.navigate(Screen.AddSchedule.route) },
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F51B5))
             ) {
