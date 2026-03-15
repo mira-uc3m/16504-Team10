@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import com.example.homebase.ui.screens.HomeScreen
 import com.example.homebase.ui.screens.CurrencyScreen
 import com.example.homebase.ui.screens.SettingsScreen
+import com.example.homebase.ui.screens.ScheduleScreen
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -22,6 +23,9 @@ fun AppNavGraph(navController: NavHostController) {
         }
         composable(route = "currency_screen") {
             CurrencyScreen()
+        }
+        composable(route = "schedule_screen") {
+            ScheduleScreen()
         }
     }
 }

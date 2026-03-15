@@ -80,6 +80,11 @@ fun HomeScreen(navController: NavHostController) {
                             navController.navigate("currency_screen")
                         }
                     }
+                    DashboardCard(title, icon) {
+                        if (title == "My Schedule") {
+                            navController.navigate("schedule_screen")
+                        }
+                    }
                 }
             }
         }
