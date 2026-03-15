@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -31,7 +32,7 @@ fun ScheduleScreen(viewModel: ScheduleViewModel = viewModel()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF3F51B5)) // Dark blue background from screenshot
+            .background(Color(0xFF3F51B5))
     ) {
         // Top Header
         Row(
@@ -48,18 +49,17 @@ fun ScheduleScreen(viewModel: ScheduleViewModel = viewModel()) {
             )
         }
 
-        // Calendar Card (Simulated for iteration 1)
         CalendarSection(viewModel)
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Bottom List Section
+        // Bottom Class List Section
         if (viewModel.filteredActivities.isNotEmpty()) {
             ActivityListSection(viewModel)
         } else {
             // "Add to Schedule" button for empty days
             Button(
-                onClick = { /* Handle Add */ },
+                onClick = { /* Handle Add */ }, // TODO: add functionality --> iteration 2
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -127,26 +127,41 @@ fun ActivityListSection(viewModel: ScheduleViewModel) {
 
 @Composable
 fun CalendarSection(viewModel: ScheduleViewModel) {
+    val currentMonth = viewModel.currentMonth
+    val daysInMonth = currentMonth.lengthOfMonth()
+
+    // Find what day of the week the 1st falls on
+    // .value returns 1 (Mon) to 7 (Sun). We adjust so Sun = 0.
+    val firstDayOfMonth = currentMonth.atDay(1)
+    val firstDayOfWeekIndex = firstDayOfMonth.dayOfWeek.value % 7
     Card(
         modifier = Modifier.padding(16.dp).fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Month Header
+            // Month Navigation Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.KeyboardArrowLeft, contentDescription = null)
-                Text("Sep 2025", fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp))
-                Icon(Icons.Default.KeyboardArrowRight, contentDescription = null)
+                IconButton(onClick = { viewModel.previousMonth() }) {
+                    Icon(Icons.Default.KeyboardArrowLeft, contentDescription = "Previous")
+                }
+
+                Text(
+                    text = "${currentMonth.month.name.lowercase().capitalize()} ${currentMonth.year}",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                IconButton(onClick = { viewModel.nextMonth() }) {
+                    Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Next")
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Day Labels (Su, Mo, Tu...)
+            // Day Labels
             val daysOfWeek = listOf("Su", "Mo", "Tu", "We", "Th", "Fr", "Sa")
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 daysOfWeek.forEach { day ->
@@ -154,21 +169,21 @@ fun CalendarSection(viewModel: ScheduleViewModel) {
                 }
             }
 
-            // The Actual Date Grid
-            // We use 7 columns for the 7 days of the week
+            // Dynamic Grid
             LazyVerticalGrid(
                 columns = GridCells.Fixed(7),
-                modifier = Modifier.height(250.dp).padding(top = 8.dp),
-                userScrollEnabled = false // Keep it static like a calendar card
+                modifier = Modifier.height(260.dp).padding(top = 8.dp),
+                userScrollEnabled = false
             ) {
-                // Assuming September 2025 starts on a Monday (Index 1)
-                // We add empty items for the "offset" so the 1st starts on the right day
-                items(1) { Spacer(modifier = Modifier.size(32.dp)) }
+                // Empty spacers for the start of the month
+                items(firstDayOfWeekIndex) { Spacer(modifier = Modifier.size(32.dp)) }
 
-                items(30) { index ->
-                    val dayNumber = index + 1
-                    val date = LocalDate.of(2025, 9, dayNumber)
+                // Add the actual days
+                items(daysInMonth) { index ->
+                    val dayNum = index + 1
+                    val date = currentMonth.atDay(dayNum)
                     val isSelected = viewModel.selectedDate == date
+                    val isToday = date == LocalDate.now()
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -179,17 +194,18 @@ fun CalendarSection(viewModel: ScheduleViewModel) {
                         Surface(
                             shape = CircleShape,
                             color = if (isSelected) Color(0xFF3F51B5) else Color.Transparent,
+                            border = if (isToday && !isSelected) BorderStroke(1.dp, Color(0xFF3F51B5)) else null,
                             modifier = Modifier.size(32.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
-                                    text = "$dayNumber",
+                                    text = "$dayNum",
                                     color = if (isSelected) Color.White else Color.Black,
-                                    fontSize = 14.sp
+                                    fontSize = 14.sp,
+                                    fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
                                 )
                             }
                         }
-                        // The activity indicator dot
                         if (viewModel.hasActivity(date)) {
                             Box(
                                 modifier = Modifier
