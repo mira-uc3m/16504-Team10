@@ -21,6 +21,9 @@ import com.example.homebase.data.view.AddScheduleViewModel
 import com.example.homebase.data.view.ScheduleViewModel
 import java.time.LocalDate
 import java.util.UUID
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -170,32 +173,75 @@ fun AddScheduleScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DateRowItem(entry: DateEntry, onDelete: () -> Unit) {
-    var day by remember { mutableStateOf(entry.day) }
-    var month by remember { mutableStateOf(entry.month) }
-    var year by remember { mutableStateOf(entry.year) }
+fun DateRowItem(
+    entry: DateEntry,
+    onDelete: () -> Unit
+) {
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
     var expanded by remember { mutableStateOf(false) }
+
+    // Convert selection to String for display --> DD/MM/YYYY
+    val dateDisplay = if (entry.day.isNotEmpty()) {
+        "${entry.day}/${entry.month}/${entry.year}"
+    } else {
+        "Select Date"
+    }
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val selectedDate = datePickerState.selectedDateMillis?.let {
+                        java.time.Instant.ofEpochMilli(it)
+                            .atZone(java.time.ZoneId.systemDefault())
+                            .toLocalDate()
+                    }
+                    selectedDate?.let {
+                        entry.day = it.dayOfMonth.toString()
+                        entry.month = it.monthValue.toString()
+                        entry.year = it.year.toString()
+                    }
+                    showDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     Column(Modifier.padding(vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(value = day, onValueChange = { day = it; entry.day = it }, modifier = Modifier.weight(1f), placeholder = { Text("DD") })
-            Spacer(Modifier.width(8.dp))
-            OutlinedTextField(value = month, onValueChange = { month = it; entry.month = it }, modifier = Modifier.weight(1f), placeholder = { Text("MM") })
-            Spacer(Modifier.width(8.dp))
-            OutlinedTextField(value = year, onValueChange = { year = it; entry.year = it }, modifier = Modifier.weight(1.2f), placeholder = { Text("YYYY") })
-
-            Spacer(Modifier.width(16.dp))
-            // Delete Icon
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Close, contentDescription = "Remove Date", tint = Color.Gray, modifier = Modifier.size(20.dp))
+            OutlinedCard(
+                onClick = { showDatePicker = true },
+                modifier = Modifier.weight(3f),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, Color.LightGray)
+            ) {
+                Text(
+                    text = dateDisplay,
+                    modifier = Modifier.padding(16.dp),
+                    color = if (entry.day.isEmpty()) Color.Gray else Color.Black
+                )
             }
+
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Close, contentDescription = "Remove", tint = Color.Gray)
+            }
+
             // Time Pill
             Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF0F0F0)) {
                 Text(entry.time, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), fontSize = 14.sp)
             }
         }
 
+        // Repeat Dropdown Row
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
             Text("Repeat", fontSize = 14.sp, color = Color.Gray)
             Spacer(Modifier.width(8.dp))
