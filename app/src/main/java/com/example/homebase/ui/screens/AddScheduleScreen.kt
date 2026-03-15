@@ -180,7 +180,9 @@ fun DateRowItem(
     onDelete: () -> Unit
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
+    val timePickerState = rememberTimePickerState(initialHour = 11, initialMinute = 0)
     var expanded by remember { mutableStateOf(false) }
 
     // Convert selection to String for display --> DD/MM/YYYY
@@ -216,6 +218,25 @@ fun DateRowItem(
         }
     }
 
+    if (showTimePicker) {
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    // Formats time as "HH:mm"
+                    val hour = timePickerState.hour.toString().padStart(2, '0')
+                    val min = timePickerState.minute.toString().padStart(2, '0')
+                    entry.time = "$hour:$min"
+                    showTimePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+            },
+            text = { TimePicker(state = timePickerState) }
+        )
+    }
+
     Column(Modifier.padding(vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlinedCard(
@@ -236,7 +257,7 @@ fun DateRowItem(
             }
 
             // Time Pill
-            Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFF0F0F0)) {
+            Surface(onClick = { showTimePicker = true }, shape = RoundedCornerShape(20.dp), color = Color(0xFFF0F0F0)) {
                 Text(entry.time, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), fontSize = 14.sp)
             }
         }
