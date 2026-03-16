@@ -73,4 +73,9 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.8.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+
+    // Google Maps Compose library
+    implementation("com.google.maps.android:maps-compose:4.4.1")
+    // Google Maps SDK
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
 }

@@ -76,13 +76,10 @@ fun HomeScreen(navController: NavHostController) {
             ) {
                 items(gridItems) { (title, icon) ->
                     DashboardCard(title, icon) {
-                        if (title == "Currency") {
-                            navController.navigate("currency_screen")
-                        }
-                    }
-                    DashboardCard(title, icon) {
-                        if (title == "My Schedule") {
-                            navController.navigate("schedule_screen")
+                        when (title) {
+                            "Currency" -> navController.navigate("currency_screen")
+                            "My Schedule" -> navController.navigate("schedule_screen")
+                            "Campus Map" -> navController.navigate("map")
                         }
                     }
                 }
