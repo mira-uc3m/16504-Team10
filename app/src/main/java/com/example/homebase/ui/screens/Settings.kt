@@ -7,6 +7,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,7 +30,17 @@ fun SettingsScreen(navController: NavHostController) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("HOME BASE", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Settings", color = Color.White, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            contentDescription = "Back",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color(0xFF3629B7)
                 )
@@ -44,7 +55,6 @@ fun SettingsScreen(navController: NavHostController) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // Language and Region
             Text(
                 "Language & Region",
                 fontWeight = FontWeight.Bold,
@@ -59,7 +69,6 @@ fun SettingsScreen(navController: NavHostController) {
             HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Notifications
             Text(
                 "Notifications",
                 fontWeight = FontWeight.Bold,
@@ -70,19 +79,17 @@ fun SettingsScreen(navController: NavHostController) {
             SettingsSwitchItem("Class Reminders", classReminders) { classReminders = it }
             SettingsSwitchItem("Checklist Reminders", checklistReminders) { checklistReminders = it }
 
-
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
             Spacer(modifier = Modifier.height(16.dp))
 
-            //Location and Map Preferences
             Text(
                 "Location & Map Preferences",
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            SettingsSwitchItem("Enable Location Tracking", locationTracking) { locationTracking = it }
+            SettingsSwitchItem("Enable location tracking", locationTracking) { locationTracking = it }
         }
     }
 }
