@@ -10,8 +10,7 @@ import com.example.homebase.ui.screens.CurrencyScreen
 import com.example.homebase.ui.screens.HomeScreen
 import com.example.homebase.ui.screens.ScheduleScreen
 import com.example.homebase.ui.screens.SettingsScreen
-import com.example.homebase.ui.screens.ScheduleScreen
-import com.example.homebase.ui.screens.MapScreen // 1. Add this import
+import com.example.homebase.ui.screens.MapScreen
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -28,7 +27,7 @@ fun AppNavGraph(navController: NavHostController) {
             SettingsScreen(navController)
         }
         composable(route = "currency_screen") {
-            CurrencyScreen()
+            CurrencyScreen(navController = navController)
         }
         composable(route = "schedule_screen") {
             ScheduleScreen(
