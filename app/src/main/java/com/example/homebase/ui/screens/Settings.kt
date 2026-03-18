@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -22,6 +23,8 @@ import androidx.navigation.NavHostController
 fun SettingsScreen(navController: NavHostController) {
     var pushNotifications by remember { mutableStateOf(true) }
     var classReminders by remember { mutableStateOf(false) }
+    var checklistReminders by remember { mutableStateOf(true) }
+    var locationTracking by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -39,28 +42,48 @@ fun SettingsScreen(navController: NavHostController) {
                 .padding(paddingValues)
                 .background(Color.White)
                 .verticalScroll(rememberScrollState())
-                .padding(8.dp)
+                .padding(16.dp)
         ) {
+            // --- SECTION 1: LANGUAGE & REGION ---
             Text(
                 "Language & Region",
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 12.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             )
 
             SettingsDropdownItem(label = "Region", value = "Canada 🇨🇦")
             SettingsDropdownItem(label = "Language", value = "English")
             SettingsDropdownItem(label = "Preferred Currency", value = "CAD")
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // Super thin horizontal grey line
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
+            Spacer(modifier = Modifier.height(16.dp))
 
+            // --- SECTION 2: NOTIFICATIONS ---
             Text(
                 "Notifications",
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 12.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             )
 
             SettingsSwitchItem("Allow Push Notifications", pushNotifications) { pushNotifications = it }
             SettingsSwitchItem("Class Reminders", classReminders) { classReminders = it }
+            SettingsSwitchItem("Checklist Reminders", checklistReminders) { checklistReminders = it }
+
+            // Super thin horizontal grey line
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- SECTION 3: LOCATION & MAP PREFERENCES ---
+            Text(
+                "Location & Map Preferences",
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            SettingsSwitchItem("Enable Location Tracking", locationTracking) { locationTracking = it }
         }
     }
 }
@@ -71,16 +94,17 @@ fun SettingsDropdownItem(label: String, value: String) {
         Text(label, fontSize = 12.sp, color = Color.Gray)
         Card(
             modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF3629B7)),
-            shape = RoundedCornerShape(8.dp)
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, Color.LightGray)
         ) {
             Row(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(value)
-                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                Text(value, color = Color.Black)
+                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color(0xFF3629B7))
             }
         }
     }
@@ -93,7 +117,14 @@ fun SettingsSwitchItem(label: String, checked: Boolean, onToggle: (Boolean) -> U
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label)
-        Switch(checked = checked, onCheckedChange = onToggle)
+        Text(label, color = Color.Black)
+        Switch(
+            checked = checked,
+            onCheckedChange = onToggle,
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = Color(0xFF3629B7),
+                checkedThumbColor = Color.White
+            )
+        )
     }
 }
