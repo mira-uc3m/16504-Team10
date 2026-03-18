@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,11 +24,23 @@ import androidx.navigation.NavHostController
 fun SettingsScreen(navController: NavHostController) {
     var pushNotifications by remember { mutableStateOf(true) }
     var classReminders by remember { mutableStateOf(false) }
+    var checklistReminders by remember { mutableStateOf(true) }
+    var locationTracking by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("HOME BASE", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Settings", color = Color.White, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            contentDescription = "Back",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color(0xFF3629B7)
                 )
@@ -39,28 +53,43 @@ fun SettingsScreen(navController: NavHostController) {
                 .padding(paddingValues)
                 .background(Color.White)
                 .verticalScroll(rememberScrollState())
-                .padding(8.dp)
+                .padding(16.dp)
         ) {
             Text(
                 "Language & Region",
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 12.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             )
 
             SettingsDropdownItem(label = "Region", value = "Canada 🇨🇦")
             SettingsDropdownItem(label = "Language", value = "English")
             SettingsDropdownItem(label = "Preferred Currency", value = "CAD")
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
                 "Notifications",
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 12.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             )
 
             SettingsSwitchItem("Allow Push Notifications", pushNotifications) { pushNotifications = it }
             SettingsSwitchItem("Class Reminders", classReminders) { classReminders = it }
+            SettingsSwitchItem("Checklist Reminders", checklistReminders) { checklistReminders = it }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                "Location & Map Preferences",
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            SettingsSwitchItem("Enable location tracking", locationTracking) { locationTracking = it }
         }
     }
 }
@@ -71,16 +100,17 @@ fun SettingsDropdownItem(label: String, value: String) {
         Text(label, fontSize = 12.sp, color = Color.Gray)
         Card(
             modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF3629B7)),
-            shape = RoundedCornerShape(8.dp)
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, Color.LightGray)
         ) {
             Row(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(value)
-                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                Text(value, color = Color.Black)
+                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color(0xFF3629B7))
             }
         }
     }
@@ -93,7 +123,14 @@ fun SettingsSwitchItem(label: String, checked: Boolean, onToggle: (Boolean) -> U
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label)
-        Switch(checked = checked, onCheckedChange = onToggle)
+        Text(label, color = Color.Black)
+        Switch(
+            checked = checked,
+            onCheckedChange = onToggle,
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = Color(0xFF3629B7),
+                checkedThumbColor = Color.White
+            )
+        )
     }
 }
