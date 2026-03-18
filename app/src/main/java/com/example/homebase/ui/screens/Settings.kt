@@ -7,7 +7,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,17 +29,7 @@ fun SettingsScreen(navController: NavHostController) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Settings", color = Color.White, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = "Back",
-                            tint = Color.White,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
-                },
+                title = { Text("HOME BASE", color = Color.White, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color(0xFF3629B7)
                 )
@@ -55,6 +44,7 @@ fun SettingsScreen(navController: NavHostController) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            // --- SECTION 1: LANGUAGE & REGION ---
             Text(
                 "Language & Region",
                 fontWeight = FontWeight.Bold,
@@ -65,10 +55,12 @@ fun SettingsScreen(navController: NavHostController) {
             SettingsDropdownItem(label = "Language", value = "English")
             SettingsDropdownItem(label = "Preferred Currency", value = "CAD")
 
+            // Super thin horizontal grey line
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
             Spacer(modifier = Modifier.height(16.dp))
 
+            // --- SECTION 2: NOTIFICATIONS ---
             Text(
                 "Notifications",
                 fontWeight = FontWeight.Bold,
@@ -79,17 +71,19 @@ fun SettingsScreen(navController: NavHostController) {
             SettingsSwitchItem("Class Reminders", classReminders) { classReminders = it }
             SettingsSwitchItem("Checklist Reminders", checklistReminders) { checklistReminders = it }
 
+            // Super thin horizontal grey line
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
             Spacer(modifier = Modifier.height(16.dp))
 
+            // --- SECTION 3: LOCATION & MAP PREFERENCES ---
             Text(
                 "Location & Map Preferences",
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            SettingsSwitchItem("Enable location tracking", locationTracking) { locationTracking = it }
+            SettingsSwitchItem("Enable Location Tracking", locationTracking) { locationTracking = it }
         }
     }
 }
