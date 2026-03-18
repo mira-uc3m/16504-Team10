@@ -44,7 +44,7 @@ fun SettingsScreen(navController: NavHostController) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // --- SECTION 1: LANGUAGE & REGION ---
+            // Language and Region
             Text(
                 "Language & Region",
                 fontWeight = FontWeight.Bold,
@@ -55,12 +55,11 @@ fun SettingsScreen(navController: NavHostController) {
             SettingsDropdownItem(label = "Language", value = "English")
             SettingsDropdownItem(label = "Preferred Currency", value = "CAD")
 
-            // Super thin horizontal grey line
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- SECTION 2: NOTIFICATIONS ---
+            // Notifications
             Text(
                 "Notifications",
                 fontWeight = FontWeight.Bold,
@@ -71,12 +70,12 @@ fun SettingsScreen(navController: NavHostController) {
             SettingsSwitchItem("Class Reminders", classReminders) { classReminders = it }
             SettingsSwitchItem("Checklist Reminders", checklistReminders) { checklistReminders = it }
 
-            // Super thin horizontal grey line
+
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- SECTION 3: LOCATION & MAP PREFERENCES ---
+            //Location and Map Preferences
             Text(
                 "Location & Map Preferences",
                 fontWeight = FontWeight.Bold,
