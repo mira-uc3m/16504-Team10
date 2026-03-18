@@ -10,7 +10,8 @@ val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
-val apiKey = localProperties.getProperty("CURRENCY_API_KEY") ?: ""
+val currencyApiKey = localProperties.getProperty("CURRENCY_API_KEY") ?: ""
+val mapsApiKey = localProperties.getProperty("MAPS_API_KEY") ?: ""
 
 android {
     namespace = "com.example.homebase"
@@ -26,7 +27,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "CURRENCY_API_KEY", "\"$apiKey\"")
+        buildConfigField("String", "CURRENCY_API_KEY", "\"$currencyApiKey\"")
+        buildConfigField("String", "MAPS_API_KEY", "\"${mapsApiKey}\"")
+
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {
