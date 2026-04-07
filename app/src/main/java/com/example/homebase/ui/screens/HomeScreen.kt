@@ -47,7 +47,7 @@ fun HomeScreen(navController: NavHostController) {
                     }
                 },
                 navigationIcon = {
-                    // Logo Placeholder as seen in screenshot
+                    
                     Surface(
                         modifier = Modifier
                             .padding(start = 16.dp)
