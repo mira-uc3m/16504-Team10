@@ -121,7 +121,7 @@ fun HomeScreen(navController: NavHostController) {
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        // Demo data - in a real app this would come from a data source
+                        // Demo data - TODO: add real data
                         items(5) { index ->
                             ClassListItem(index)
                         }
