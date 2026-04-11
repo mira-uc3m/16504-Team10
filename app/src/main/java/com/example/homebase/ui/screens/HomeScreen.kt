@@ -34,7 +34,7 @@ fun HomeScreen(navController: NavHostController) {
                     )
                 },
                 actions = {
-                    IconButton(onClick = { /* Handle Notifications */ }) {
+                    IconButton(onClick = { navController.navigate(Screen.Notifications.route) }) {
                         BadgedBox(
                             badge = { Badge { Text("3") } }
                         ) {
