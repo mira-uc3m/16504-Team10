@@ -8,6 +8,7 @@ import com.example.homebase.data.view.ScheduleViewModel
 import com.example.homebase.ui.screens.AddScheduleScreen
 import com.example.homebase.ui.screens.CurrencyScreen
 import com.example.homebase.ui.screens.HomeScreen
+import com.example.homebase.ui.screens.NotificationsScreen
 import com.example.homebase.ui.screens.ScheduleScreen
 import com.example.homebase.ui.screens.SettingsScreen
 import com.example.homebase.ui.screens.MapScreen
@@ -43,6 +44,9 @@ fun AppNavGraph(navController: NavHostController) {
         }
         composable(route = "map") {
             MapScreen(navController)
+        }
+        composable(Screen.Notifications.route) {
+            NotificationsScreen(navController)
         }
     }
 }
