@@ -24,6 +24,7 @@ import java.util.UUID
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.rememberDatePickerState
+import com.example.homebase.data.model.ScheduleEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,22 +48,24 @@ fun AddScheduleScreen(
         bottomBar = {
             Button(
                 onClick = {
+                    val newEvents = mutableListOf<ScheduleEvent>()
                     // Logic to process entries and return
                     viewModel.dateEntries.forEach { entry ->
                         try {
                             val date = LocalDate.of(entry.year.toInt(), entry.month.toInt(), entry.day.toInt())
-                            scheduleViewModel.allActivities.add(
-                                ClassActivity(
-                                    id = UUID.randomUUID().toString(),
-                                    name = viewModel.className,
-                                    room = viewModel.location,
-                                    time = entry.time,
-                                    date = date,
-                                    color = viewModel.selectedColor
-                                )
+                            val event = ScheduleEvent(
+                                id = UUID.randomUUID().toString(),
+                                name = viewModel.className,
+                                location = viewModel.location,
+                                time = entry.time,
+                                date = date.toString(),
+                                color = viewModel.selectedColor
                             )
+
+                            newEvents.add(event)
                         } catch (e: Exception) { /* Handle invalid dates */ }
                     }
+                    scheduleViewModel.saveEventsToFirebase(newEvents)
                     onBack()
                 },
                 modifier = Modifier.fillMaxWidth().padding(16.dp).height(56.dp),

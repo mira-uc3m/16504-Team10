@@ -108,7 +108,7 @@ fun ActivityListSection(navController: NavController, viewModel: ScheduleViewMod
                         }
                         Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
                             Text(activity.name, fontWeight = FontWeight.Bold)
-                            Text(activity.room, color = Color.Gray, fontSize = 12.sp)
+                            Text(activity.location, color = Color.Gray, fontSize = 12.sp)
                         }
                         Text(activity.time, fontWeight = FontWeight.Bold, color = Color(0xFF3F51B5))
                     }
