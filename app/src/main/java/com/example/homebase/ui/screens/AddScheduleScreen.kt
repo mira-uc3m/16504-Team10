@@ -25,6 +25,9 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.rememberDatePickerState
 import com.example.homebase.data.model.ScheduleEvent
+import com.google.firebase.auth.FirebaseAuth
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,12 +52,14 @@ fun AddScheduleScreen(
             Button(
                 onClick = {
                     val newEvents = mutableListOf<ScheduleEvent>()
+                    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
                     // Logic to process entries and return
                     viewModel.dateEntries.forEach { entry ->
                         try {
                             val date = LocalDate.of(entry.year.toInt(), entry.month.toInt(), entry.day.toInt())
                             val event = ScheduleEvent(
                                 id = UUID.randomUUID().toString(),
+                                userId = uid,
                                 name = viewModel.className,
                                 location = viewModel.location,
                                 time = entry.time,

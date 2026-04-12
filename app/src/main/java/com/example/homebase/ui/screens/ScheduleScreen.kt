@@ -31,6 +31,9 @@ import androidx.navigation.NavController
 
 @Composable
 fun ScheduleScreen(navController: NavController, viewModel: ScheduleViewModel = viewModel()) {
+    LaunchedEffect(Unit) {
+        viewModel.fetchScheduleFromFirebase()
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()

@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.homebase.data.model.ClassActivity
 import com.example.homebase.data.repository.ScheduleRepository
 import com.example.homebase.data.model.ScheduleEvent
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
@@ -16,6 +17,9 @@ import java.time.YearMonth
 class ScheduleViewModel(private val repository: ScheduleRepository = ScheduleRepository()) : ViewModel() {
     var selectedDate by mutableStateOf(LocalDate.now())
     var currentMonth by mutableStateOf(YearMonth.now())
+
+    private val currentUserId: String?
+        get() = FirebaseAuth.getInstance().currentUser?.uid
 
     // Dummy data to simulate the Figma --> will be replaced by stored data
     var allActivities = mutableStateListOf<ScheduleEvent>()
@@ -27,12 +31,18 @@ class ScheduleViewModel(private val repository: ScheduleRepository = ScheduleRep
     }
 
     fun fetchScheduleFromFirebase() {
-        viewModelScope.launch {
-            isLoading.value = true
-            val events = repository.getEvents()
-            allActivities.clear()
-            allActivities.addAll(events)
-            isLoading.value = false
+        val uid = currentUserId // Capture the ID
+
+        if (uid != null) {
+            viewModelScope.launch {
+                isLoading.value = true
+                val events = repository.getEvents(uid)
+                allActivities.clear()
+                allActivities.addAll(events)
+                isLoading.value = false
+            }
+        } else {
+            println("VIEWMODEL_ERROR: No user logged in")
         }
     }
 
