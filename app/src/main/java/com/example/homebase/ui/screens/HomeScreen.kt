@@ -200,6 +200,16 @@ fun HomeScreen(navController: NavHostController, viewModel: ScheduleViewModel) {
 
 @Composable
 fun RealClassListItem(event: ScheduleEvent) {
+    val icons = listOf(
+        Icons.Default.Stars,
+        Icons.Default.Thunderstorm,
+        Icons.Default.Notes,
+        Icons.Default.Train,
+        Icons.Default.List,
+        Icons.Default.School
+    )
+    val displayIcon = icons.getOrElse(event.iconIndex) { Icons.Default.School }
+
     Column {
         Row(
             modifier = Modifier
@@ -215,7 +225,7 @@ fun RealClassListItem(event: ScheduleEvent) {
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        Icons.Default.School,
+                        displayIcon,
                         contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(20.dp)
@@ -241,58 +251,6 @@ fun RealClassListItem(event: ScheduleEvent) {
 
             Text(
                 event.time,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF3022A6),
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-        HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFF0F0F0))
-    }
-}
-
-@Composable
-fun ClassListItem(index: Int) {
-    val titles = listOf("Mobile Applications", "Class 2", "Class 3", "Class 4", "Class 5")
-    val rooms = listOf("4.0.G01", "1.0.D01", "4.0.D04", "7.0.D06", "1.0.D01")
-    val times = listOf("9:00 h", "11:00 h", "13:00 h", "15:00 h", "17:00 h")
-    val colors = listOf(Color(0xFF3022A6), Color(0xFFFF4D4D), Color(0xFF2196F3), Color(0xFFFFB300), Color(0xFF4DB6AC))
-    val icons = listOf(Icons.Default.WaterDrop, Icons.Default.ConfirmationNumber, Icons.Default.PushPin, Icons.Default.Dashboard, Icons.Default.CalendarToday)
-
-    Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                modifier = Modifier.size(44.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = colors[index % colors.size]
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icons[index % icons.size], contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
-                }
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    titles[index % titles.size],
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color(0xFF333333)
-                )
-                Text(
-                    rooms[index % rooms.size],
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
-            }
-
-            Text(
-                times[index % times.size],
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF3022A6),
                 style = MaterialTheme.typography.bodyMedium

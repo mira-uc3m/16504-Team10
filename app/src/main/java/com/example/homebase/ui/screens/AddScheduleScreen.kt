@@ -15,7 +15,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.homebase.data.model.ClassActivity
 import com.example.homebase.data.model.DateEntry
 import com.example.homebase.data.view.AddScheduleViewModel
 import com.example.homebase.data.view.ScheduleViewModel
@@ -64,7 +63,8 @@ fun AddScheduleScreen(
                                 location = viewModel.location,
                                 time = entry.time,
                                 date = date.toString(),
-                                color = viewModel.selectedColor
+                                color = viewModel.selectedColor,
+                                iconIndex = viewModel.selectedIconIndex
                             )
 
                             newEvents.add(event)
@@ -95,9 +95,14 @@ fun AddScheduleScreen(
                 Surface(
                     modifier = Modifier.size(60.dp),
                     shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFF332CA4)
+                    color = Color(viewModel.selectedColor)
                 ) {
-                    Icon(viewModel.selectedIcon, contentDescription = null, tint = Color.White, modifier = Modifier.padding(12.dp))
+                    Icon(
+                        viewModel.icons[viewModel.selectedIconIndex],
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.padding(12.dp)
+                    )
                 }
                 Spacer(Modifier.width(16.dp))
                 OutlinedTextField(
@@ -125,16 +130,15 @@ fun AddScheduleScreen(
 
             Text("Icon", color = Color.Gray, style = MaterialTheme.typography.labelLarge)
             Row(Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                val icons = listOf(Icons.Default.Stars, Icons.Default.Thunderstorm, Icons.Default.Notes, Icons.Default.Train, Icons.Default.List)
-                icons.forEach { icon ->
+                viewModel.icons.forEachIndexed { index, icon ->
                     Icon(
                         icon,
                         contentDescription = null,
                         modifier = Modifier
                             .size(28.dp)
-                            .clickable { viewModel.selectedIcon = icon }
-                            .border(if(viewModel.selectedIcon == icon) 1.dp else 0.dp, Color.Blue),
-                        tint = if(viewModel.selectedIcon == icon) Color.Black else Color.Gray
+                            .clickable { viewModel.selectedIconIndex = index }
+                            .border(if(viewModel.selectedIconIndex == index) 1.dp else 0.dp, Color.Blue),
+                        tint = if(viewModel.selectedIconIndex == index) Color.Black else Color.Gray
                     )
                 }
             }
