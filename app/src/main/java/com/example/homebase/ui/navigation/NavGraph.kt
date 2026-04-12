@@ -1,6 +1,7 @@
 package com.example.homebase.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -22,7 +23,7 @@ fun AppNavGraph(navController: NavHostController) {
         startDestination = Screen.Home.route
     ) {
         composable(Screen.Home.route) {
-            HomeScreen(navController)
+            HomeScreen(navController = navController, viewModel=scheduleViewModel)
         }
         composable(Screen.Settings.route) {
             SettingsScreen(navController)

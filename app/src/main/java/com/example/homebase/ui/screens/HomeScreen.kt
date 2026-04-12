@@ -4,11 +4,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,10 +20,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.homebase.ui.navigation.Screen
+import com.example.homebase.data.view.ScheduleViewModel
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import com.example.homebase.data.model.ScheduleEvent
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavHostController) {
+fun HomeScreen(navController: NavHostController, viewModel: ScheduleViewModel) {
+    LaunchedEffect(Unit) {
+        viewModel.fetchScheduleFromFirebase()
+    }
+
+    val todayClasses by viewModel.todayClasses
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -117,13 +129,40 @@ fun HomeScreen(navController: NavHostController) {
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        // Demo data - TODO: add real data
-                        items(5) { index ->
-                            ClassListItem(index)
+                    if (todayClasses.isEmpty()) {
+                        // Empty State View
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.EventAvailable,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = Color.LightGray
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "No classes today!",
+                                color = Color.Gray,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                "Enjoy your free time.",
+                                color = Color.LightGray,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    } else {
+                        // Display the real data
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items(todayClasses) { event ->
+                                RealClassListItem(event)
+                            }
                         }
                     }
                 }
@@ -156,6 +195,58 @@ fun HomeScreen(navController: NavHostController) {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun RealClassListItem(event: ScheduleEvent) {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Icon Background using the color saved in Firebase
+            Surface(
+                modifier = Modifier.size(44.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = Color(event.color)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Default.School,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    event.name,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color(0xFF333333)
+                )
+                Text(
+                    event.location,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+            }
+
+            Text(
+                event.time,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF3022A6),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFF0F0F0))
     }
 }
 

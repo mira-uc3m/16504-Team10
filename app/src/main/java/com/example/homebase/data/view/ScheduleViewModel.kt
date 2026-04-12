@@ -1,5 +1,6 @@
 package com.example.homebase.data.view
 
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,12 +22,16 @@ class ScheduleViewModel(private val repository: ScheduleRepository = ScheduleRep
     private val currentUserId: String?
         get() = FirebaseAuth.getInstance().currentUser?.uid
 
-    // Dummy data to simulate the Figma --> will be replaced by stored data
     var allActivities = mutableStateListOf<ScheduleEvent>()
     var isLoading = mutableStateOf(false)
 
+    val todayClasses = derivedStateOf {
+        val todayStr = LocalDate.now().toString() // e.g. "2026-04-12"
+        allActivities.filter { it.date == todayStr }
+            .sortedBy { it.time } // Sort by time so morning classes are first
+    }
+
     init {
-        // This is the "First Load" GET request
         fetchScheduleFromFirebase()
     }
 
