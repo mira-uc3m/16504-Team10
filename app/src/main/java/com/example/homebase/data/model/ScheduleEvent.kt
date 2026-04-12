@@ -2,6 +2,7 @@ package com.example.homebase.data.model
 
 data class ScheduleEvent(
     val id: String = "",
+    val userId: String = "",
     val name: String = "",
     val location: String = "",
     val time: String = "",
