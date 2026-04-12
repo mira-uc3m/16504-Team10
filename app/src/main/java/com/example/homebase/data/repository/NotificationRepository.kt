@@ -7,45 +7,51 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
 class NotificationRepository {
     private val db = FirebaseFirestore.getInstance()
-    private val eventsCollection = db.collection("scheduleEvents")
+    private val notificationsCollection = db.collection("notifications")
 
-    fun getNotificationsFlow(): Flow<List<Notification>> = callbackFlow {
-        val subscription = eventsCollection.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                Log.e("NotificationRepository", "Firestore error: ${error.message}")
-                trySend(emptyList()) // Avoid crashing, send empty list instead
-                return@addSnapshotListener
-            }
-
-            val notifications = snapshot?.documents?.mapNotNull { doc ->
-                try {
-                    val event = doc.toObject(ScheduleEvent::class.java)
-                    event?.let { createNotificationIfUpcoming(it) }
-                } catch (e: Exception) {
-                    Log.e("NotificationRepository", "Error parsing event: ${e.message}")
-                    null
+    fun getNotificationsFlow(userId: String): Flow<List<Notification>> = callbackFlow {
+        val subscription = notificationsCollection
+            .whereEqualTo("userId", userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("NotificationRepository", "Firestore error: ${error.message}")
+                    trySend(emptyList())
+                    return@addSnapshotListener
                 }
-            } ?: emptyList()
 
-            trySend(notifications.sortedByDescending { it.timestamp })
-        }
+                val notifications = snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(Notification::class.java)
+                } ?: emptyList()
+
+                trySend(notifications.sortedByDescending { it.timestamp })
+            }
 
         awaitClose { subscription.remove() }
     }
 
-    private fun createNotificationIfUpcoming(event: ScheduleEvent): Notification? {
+    suspend fun postNotification(notification: Notification): Boolean {
         return try {
-            // date: "YYYY-MM-DD", time: "HH:mm"
+            notificationsCollection.document(notification.id).set(notification).await()
+            true
+        } catch (e: Exception) {
+            Log.e("NotificationRepository", "Error posting notification: ${e.message}")
+            false
+        }
+    }
+
+    fun createNotificationFromEvent(event: ScheduleEvent, userId: String): Notification? {
+        return try {
             val eventDateTime = LocalDateTime.parse("${event.date}T${event.time}:00")
             val now = LocalDateTime.now()
             
-            // Only show notifications for events today or in the future
+            // Only create if event is in the future or very recent
             if (eventDateTime.isAfter(now.minusHours(1))) {
                 val minutesUntil = ChronoUnit.MINUTES.between(now, eventDateTime)
                 
@@ -56,16 +62,17 @@ class NotificationRepository {
                 }
 
                 Notification(
-                    id = event.id,
+                    id = "notif_${event.id}",
+                    userId = userId,
                     title = event.name,
                     time = "${event.date} - ${event.time}h",
                     status = status,
                     room = event.location,
-                    timestamp = eventDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    timestamp = eventDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 )
             } else null
         } catch (e: Exception) {
-            Log.e("NotificationRepository", "Error creating notification: ${e.message}")
+            Log.e("NotificationRepository", "Error creating notification object: ${e.message}")
             null
         }
     }
