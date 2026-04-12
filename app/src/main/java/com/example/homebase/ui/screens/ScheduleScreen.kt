@@ -11,9 +11,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,7 +42,9 @@ fun ScheduleScreen(navController: NavController, viewModel: ScheduleViewModel = 
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.KeyboardArrowLeft, contentDescription = null, tint = Color.White)
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(Icons.Default.KeyboardArrowLeft, contentDescription = null, tint = Color.White)
+            }
             Text(
                 "My Schedule",
                 color = Color.White,
@@ -63,17 +63,31 @@ fun ScheduleScreen(navController: NavController, viewModel: ScheduleViewModel = 
             ActivityListSection(navController, viewModel)
         } else {
             // "Add to Schedule" button for empty days
-            Button(
-                onClick = { navController.navigate(Screen.AddSchedule.route) }, // TODO: add functionality --> iteration 2
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                shape = RoundedCornerShape(16.dp)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = Color.White
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF3F51B5))
-                Text("Add to Schedule", color = Color(0xFF3F51B5))
+                Column(modifier = Modifier.padding(24.dp)) {
+                    Text(
+                        text = viewModel.selectedDate.format(DateTimeFormatter.ofPattern("MMMM dd, yyyy")),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = { navController.navigate(Screen.AddSchedule.route) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F51B5)),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Add to Schedule")
+                    }
+                }
             }
         }
     }
@@ -81,6 +95,15 @@ fun ScheduleScreen(navController: NavController, viewModel: ScheduleViewModel = 
 
 @Composable
 fun ActivityListSection(navController: NavController, viewModel: ScheduleViewModel) {
+    val icons = listOf(
+        Icons.Default.Stars,
+        Icons.Default.Thunderstorm,
+        Icons.Default.Notes,
+        Icons.Default.Train,
+        Icons.Default.List,
+        Icons.Default.School
+    )
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
@@ -93,8 +116,12 @@ fun ActivityListSection(navController: NavController, viewModel: ScheduleViewMod
                 color = Color.Gray
             )
 
-            LazyColumn(modifier = Modifier.padding(top = 16.dp)) {
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 400.dp).padding(top = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 items(viewModel.filteredActivities) { activity ->
+                    val displayIcon = icons.getOrElse(activity.iconIndex) { Icons.Default.School }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -103,11 +130,16 @@ fun ActivityListSection(navController: NavController, viewModel: ScheduleViewMod
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
-                                .background(Color(activity.color), RoundedCornerShape(8.dp)),
+                                .size(44.dp)
+                                .background(Color(activity.color), RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center
                         ) {
-                            // Icon placeholder
+                            Icon(
+                                displayIcon,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                         Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
                             Text(activity.name, fontWeight = FontWeight.Bold)
@@ -115,15 +147,20 @@ fun ActivityListSection(navController: NavController, viewModel: ScheduleViewMod
                         }
                         Text(activity.time, fontWeight = FontWeight.Bold, color = Color(0xFF3F51B5))
                     }
+                    HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFF0F0F0))
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
             Button(
                 onClick = { navController.navigate(Screen.AddSchedule.route) },
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F51B5))
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F51B5)),
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
                 Text("Add to Schedule")
             }
         }

@@ -36,7 +36,7 @@ class ScheduleViewModel(private val repository: ScheduleRepository = ScheduleRep
     }
 
     fun fetchScheduleFromFirebase() {
-        val uid = currentUserId // Capture the ID
+        val uid = currentUserId
 
         if (uid != null) {
             viewModelScope.launch {
