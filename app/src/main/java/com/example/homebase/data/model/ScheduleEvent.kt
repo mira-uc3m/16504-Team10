@@ -6,7 +6,9 @@ data class ScheduleEvent(
     val name: String = "",
     val location: String = "",
     val time: String = "",
-    val date: String = "", // Store as ISO String "YYYY-MM-DD"
+    val date: String = "", // Start date as ISO String "YYYY-MM-DD"
     val color: Long = 0xFF3F51B5,
-    val iconIndex: Int = 0
+    val iconIndex: Int = 0,
+    val repeatType: String = "Never", // "Never", "Daily", "Weekly"
+    val endDate: String? = null // Optional end date "YYYY-MM-DD"
 )

@@ -46,6 +46,17 @@ class NotificationRepository {
         }
     }
 
+    suspend fun deleteNotificationByEventId(eventId: String): Boolean {
+        return try {
+            val notificationId = "notif_$eventId"
+            notificationsCollection.document(notificationId).delete().await()
+            true
+        } catch (e: Exception) {
+            Log.e("NotificationRepository", "Error deleting notification: ${e.message}")
+            false
+        }
+    }
+
     fun createNotificationFromEvent(event: ScheduleEvent, userId: String): Notification? {
         return try {
             val eventDateTime = LocalDateTime.parse("${event.date}T${event.time}:00")
