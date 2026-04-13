@@ -1,7 +1,9 @@
 package com.example.homebase.ui.screens
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.os.Looper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -26,11 +28,13 @@ import androidx.navigation.NavHostController
 import com.example.homebase.data.model.CampusData
 import com.example.homebase.data.model.CampusBuilding
 import com.example.homebase.data.view.SettingsViewModel
+import com.google.android.gms.location.*
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import kotlin.math.*
 
+@SuppressLint("MissingPermission")
 @Composable
 fun MapScreen(
     navController: NavHostController,
@@ -64,9 +68,40 @@ fun MapScreen(
         }
     }
 
-    // Mocked current user location (e.g., somewhere in Leganes)
-    // In a real app, this would be updated via FusedLocationProviderClient
-    val userLocation = remember { LatLng(40.3330, -3.7635) }
+    // Real user location state
+    var userLocation by remember { mutableStateOf(LatLng(40.3330, -3.7635)) }
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
+    // Request location updates when permission is granted and tracking is enabled
+    DisposableEffect(hasLocationPermission, settingsViewModel.locationTrackingEnabled) {
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.lastLocation?.let {
+                    userLocation = LatLng(it.latitude, it.longitude)
+                }
+            }
+        }
+
+        if (hasLocationPermission && settingsViewModel.locationTrackingEnabled) {
+            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+                .setMinUpdateDistanceMeters(5f)
+                .build()
+            
+            try {
+                fusedLocationClient.requestLocationUpdates(
+                    locationRequest,
+                    locationCallback,
+                    Looper.getMainLooper()
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        onDispose {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+        }
+    }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(CampusData.leganesPos, 15f)
