@@ -83,6 +83,8 @@ dependencies {
     implementation("com.google.maps.android:maps-compose:4.4.1")
     // Google Maps SDK
     implementation("com.google.android.gms:play-services-maps:19.0.0")
+    // Location services
+    implementation(libs.play.services.location)
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:34.11.0"))
