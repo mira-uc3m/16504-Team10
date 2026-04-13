@@ -2,6 +2,7 @@ package com.example.homebase.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -17,10 +18,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.homebase.data.model.ScheduleEvent
 import com.example.homebase.data.view.ScheduleViewModel
 import com.example.homebase.ui.navigation.Screen
 import java.time.LocalDate
@@ -39,7 +42,7 @@ fun ScheduleScreen(navController: NavController, viewModel: ScheduleViewModel = 
     ) {
         // Top Header
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.statusBarsPadding(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navController.popBackStack() }) {
@@ -95,6 +98,9 @@ fun ScheduleScreen(navController: NavController, viewModel: ScheduleViewModel = 
 
 @Composable
 fun ActivityListSection(navController: NavController, viewModel: ScheduleViewModel) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var eventToDelete by remember { mutableStateOf<ScheduleEvent?>(null) }
+
     val icons = listOf(
         Icons.Default.Stars,
         Icons.Default.Thunderstorm,
@@ -103,6 +109,35 @@ fun ActivityListSection(navController: NavController, viewModel: ScheduleViewMod
         Icons.Default.List,
         Icons.Default.School
     )
+
+    if (showDeleteDialog && eventToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete Event") },
+            text = { Text("Would you like to delete this specific class or the entire repeating series?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    eventToDelete?.let { viewModel.deleteEvent(it) }
+                    showDeleteDialog = false
+                }) {
+                    Text("Delete Series", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                if (eventToDelete?.repeatType != "Never") {
+                    TextButton(onClick = {
+                        eventToDelete?.let { viewModel.deleteSingleInstance(it, viewModel.selectedDate) }
+                        showDeleteDialog = false
+                    }) {
+                        Text("Delete Just This One")
+                    }
+                }
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -125,6 +160,14 @@ fun ActivityListSection(navController: NavController, viewModel: ScheduleViewMod
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onLongPress = {
+                                        eventToDelete = activity
+                                        showDeleteDialog = true
+                                    }
+                                )
+                            }
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {

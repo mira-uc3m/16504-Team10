@@ -30,4 +30,14 @@ class ScheduleRepository {
             emptyList()
         }
     }
+
+    suspend fun deleteEvent(eventId: String): Boolean {
+        return try {
+            collection.document(eventId).delete().await()
+            true
+        } catch (e: Exception) {
+            println("FIREBASE_ERROR: ${e.message}")
+            false
+        }
+    }
 }

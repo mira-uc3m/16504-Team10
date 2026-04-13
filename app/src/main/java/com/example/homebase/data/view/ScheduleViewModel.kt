@@ -68,15 +68,71 @@ class ScheduleViewModel(
         }
     }
 
-    // New logic to handle repeating events
+    fun deleteEvent(event: ScheduleEvent) {
+        viewModelScope.launch {
+            val success = repository.deleteEvent(event.id)
+            if (success) {
+                notificationRepository.deleteNotificationByEventId(event.id)
+                fetchScheduleFromFirebase()
+            }
+        }
+    }
+
+    /**
+     * Delete just the instance of a repeating event on a specific date.
+     * This is implemented by setting the end date of the current event to the day before,
+     * and creating a new identical event starting from the day after.
+     */
+    fun deleteSingleInstance(event: ScheduleEvent, date: LocalDate) {
+        viewModelScope.launch {
+            val eventStartDate = LocalDate.parse(event.date)
+            
+            if (date == eventStartDate) {
+                // If deleting the very first day, just move the start date forward
+                val newStartDate = when (event.repeatType) {
+                    "Daily" -> date.plusDays(1)
+                    "Weekly" -> date.plusWeeks(1)
+                    else -> date.plusDays(1)
+                }
+                
+                // If the new start date is after the end date, just delete the whole thing
+                if (event.endDate != null && newStartDate.isAfter(LocalDate.parse(event.endDate))) {
+                    deleteEvent(event)
+                } else {
+                    val updatedEvent = event.copy(date = newStartDate.toString())
+                    repository.postEvent(updatedEvent)
+                    fetchScheduleFromFirebase()
+                }
+            } else {
+                // Split the event into two: one ending before 'date', one starting after 'date'
+                val beforeEndDate = date.minusDays(1).toString()
+                val afterStartDate = when (event.repeatType) {
+                    "Daily" -> date.plusDays(1)
+                    "Weekly" -> date.plusWeeks(1)
+                    else -> date.plusDays(1)
+                }
+
+                // Update original event to end before 'date'
+                val updatedOriginal = event.copy(endDate = beforeEndDate)
+                repository.postEvent(updatedOriginal)
+
+                // Create new event starting after 'date'
+                if (event.endDate == null || afterStartDate.isBefore(LocalDate.parse(event.endDate).plusDays(1))) {
+                    val newEvent = event.copy(
+                        id = java.util.UUID.randomUUID().toString(),
+                        date = afterStartDate.toString()
+                    )
+                    repository.postEvent(newEvent)
+                }
+                fetchScheduleFromFirebase()
+            }
+        }
+    }
+
     private fun isEventOnDate(event: ScheduleEvent, targetDate: LocalDate): Boolean {
         return try {
             val eventDate = LocalDate.parse(event.date)
-            
-            // If the target date is before the start date, it's not on this day
             if (targetDate.isBefore(eventDate)) return false
-            
-            // If there's an end date and the target date is after it, it's not on this day
             if (event.endDate != null && targetDate.isAfter(LocalDate.parse(event.endDate))) return false
             
             when (event.repeatType) {
