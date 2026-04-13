@@ -14,6 +14,7 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.temporal.ChronoUnit
 
 class ScheduleViewModel(
     private val repository: ScheduleRepository = ScheduleRepository(),
@@ -29,8 +30,8 @@ class ScheduleViewModel(
     var isLoading = mutableStateOf(false)
 
     val todayClasses = derivedStateOf {
-        val todayStr = LocalDate.now().toString()
-        allActivities.filter { it.date == todayStr }
+        val today = LocalDate.now()
+        allActivities.filter { isEventOnDate(it, today) }
             .sortedBy { it.time }
     }
 
@@ -57,7 +58,6 @@ class ScheduleViewModel(
             events.forEach { event ->
                 val success = repository.postEvent(event)
                 if (success) {
-                    // Create and post a notification for this event
                     val notification = notificationRepository.createNotificationFromEvent(event, uid)
                     notification?.let {
                         notificationRepository.postNotification(it)
@@ -68,15 +68,33 @@ class ScheduleViewModel(
         }
     }
 
-    val filteredActivities: List<ScheduleEvent>
-        get() = allActivities.filter { 
-            try { LocalDate.parse(it.date) == selectedDate } catch(e: Exception) { false }
+    // New logic to handle repeating events
+    private fun isEventOnDate(event: ScheduleEvent, targetDate: LocalDate): Boolean {
+        return try {
+            val eventDate = LocalDate.parse(event.date)
+            
+            // If the target date is before the start date, it's not on this day
+            if (targetDate.isBefore(eventDate)) return false
+            
+            // If there's an end date and the target date is after it, it's not on this day
+            if (event.endDate != null && targetDate.isAfter(LocalDate.parse(event.endDate))) return false
+            
+            when (event.repeatType) {
+                "Never" -> targetDate == eventDate
+                "Daily" -> true
+                "Weekly" -> targetDate.dayOfWeek == eventDate.dayOfWeek
+                else -> targetDate == eventDate
+            }
+        } catch (e: Exception) {
+            false
         }
+    }
+
+    val filteredActivities: List<ScheduleEvent>
+        get() = allActivities.filter { isEventOnDate(it, selectedDate) }
 
     fun hasActivity(date: LocalDate): Boolean {
-        return allActivities.any { 
-            try { LocalDate.parse(it.date) == date } catch(e: Exception) { false }
-        }
+        return allActivities.any { isEventOnDate(it, date) }
     }
 
     fun nextMonth() { currentMonth = currentMonth.plusMonths(1) }
