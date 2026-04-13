@@ -7,15 +7,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.homebase.data.model.ClassActivity
-import com.example.homebase.data.repository.ScheduleRepository
 import com.example.homebase.data.model.ScheduleEvent
+import com.example.homebase.data.repository.NotificationRepository
+import com.example.homebase.data.repository.ScheduleRepository
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 
-class ScheduleViewModel(private val repository: ScheduleRepository = ScheduleRepository()) : ViewModel() {
+class ScheduleViewModel(
+    private val repository: ScheduleRepository = ScheduleRepository(),
+    private val notificationRepository: NotificationRepository = NotificationRepository()
+) : ViewModel() {
     var selectedDate by mutableStateOf(LocalDate.now())
     var currentMonth by mutableStateOf(YearMonth.now())
 
@@ -26,9 +29,9 @@ class ScheduleViewModel(private val repository: ScheduleRepository = ScheduleRep
     var isLoading = mutableStateOf(false)
 
     val todayClasses = derivedStateOf {
-        val todayStr = LocalDate.now().toString() // e.g. "2026-04-12"
+        val todayStr = LocalDate.now().toString()
         allActivities.filter { it.date == todayStr }
-            .sortedBy { it.time } // Sort by time so morning classes are first
+            .sortedBy { it.time }
     }
 
     init {
@@ -37,7 +40,6 @@ class ScheduleViewModel(private val repository: ScheduleRepository = ScheduleRep
 
     fun fetchScheduleFromFirebase() {
         val uid = currentUserId
-
         if (uid != null) {
             viewModelScope.launch {
                 isLoading.value = true
@@ -46,28 +48,35 @@ class ScheduleViewModel(private val repository: ScheduleRepository = ScheduleRep
                 allActivities.addAll(events)
                 isLoading.value = false
             }
-        } else {
-            println("VIEWMODEL_ERROR: No user logged in")
         }
     }
 
     fun saveEventsToFirebase(events: List<ScheduleEvent>) {
+        val uid = currentUserId ?: return
         viewModelScope.launch {
             events.forEach { event ->
-                repository.postEvent(event)
+                val success = repository.postEvent(event)
+                if (success) {
+                    // Create and post a notification for this event
+                    val notification = notificationRepository.createNotificationFromEvent(event, uid)
+                    notification?.let {
+                        notificationRepository.postNotification(it)
+                    }
+                }
             }
-            // Optional: Re-fetch to ensure UI is in sync
             fetchScheduleFromFirebase()
         }
     }
 
-    // Filter activities based on the selected date
     val filteredActivities: List<ScheduleEvent>
-        get() = allActivities.filter { LocalDate.parse(it.date) == selectedDate }
+        get() = allActivities.filter { 
+            try { LocalDate.parse(it.date) == selectedDate } catch(e: Exception) { false }
+        }
 
-    // Helper to check if a date has any activity (to show the dot)
     fun hasActivity(date: LocalDate): Boolean {
-        return allActivities.any { LocalDate.parse(it.date) == date }
+        return allActivities.any { 
+            try { LocalDate.parse(it.date) == date } catch(e: Exception) { false }
+        }
     }
 
     fun nextMonth() { currentMonth = currentMonth.plusMonths(1) }
