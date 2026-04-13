@@ -17,16 +17,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.homebase.data.view.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(navController: NavHostController) {
-    var pushNotifications by remember { mutableStateOf(true) }
-    var classReminders by remember { mutableStateOf(false) }
-    var checklistReminders by remember { mutableStateOf(true) }
-    var locationTracking by remember { mutableStateOf(false) }
-
+fun SettingsScreen(navController: NavHostController, viewModel: SettingsViewModel = viewModel()) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -75,9 +72,9 @@ fun SettingsScreen(navController: NavHostController) {
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            SettingsSwitchItem("Allow Push Notifications", pushNotifications) { pushNotifications = it }
-            SettingsSwitchItem("Class Reminders", classReminders) { classReminders = it }
-            SettingsSwitchItem("Checklist Reminders", checklistReminders) { checklistReminders = it }
+            SettingsSwitchItem("Allow Push Notifications", viewModel.pushNotifications) { viewModel.pushNotifications = it }
+            SettingsSwitchItem("Class Reminders", viewModel.classReminders) { viewModel.classReminders = it }
+            SettingsSwitchItem("Checklist Reminders", viewModel.checklistReminders) { viewModel.checklistReminders = it }
 
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
@@ -89,7 +86,7 @@ fun SettingsScreen(navController: NavHostController) {
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            SettingsSwitchItem("Enable location tracking", locationTracking) { locationTracking = it }
+            SettingsSwitchItem("Enable location tracking", viewModel.locationTrackingEnabled) { viewModel.locationTrackingEnabled = it }
         }
     }
 }
