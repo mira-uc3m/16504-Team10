@@ -28,22 +28,33 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // 1. Initialize your ViewModel and State
                     val authViewModel: AuthViewModel = viewModel()
-                    val navController = rememberNavController()
 
-                    // 2. Track the user state (using mutableStateOf so Compose updates)
+                    // Listen to Firebase Auth state changes
                     var user by remember { mutableStateOf(FirebaseAuth.getInstance().currentUser) }
 
-                    // 3. Conditional Logic for which screen to show
+                    DisposableEffect(Unit) {
+                        val listener = FirebaseAuth.AuthStateListener { auth ->
+                            user = auth.currentUser
+                        }
+                        FirebaseAuth.getInstance().addAuthStateListener(listener)
+                        onDispose {
+                            FirebaseAuth.getInstance().removeAuthStateListener(listener)
+                        }
+                    }
+
+                    // Conditional Logic for which screen to show
                     if (user == null) {
                         LoginScreen(authViewModel = authViewModel) {
-                            // On Success, update the state to trigger a recomposition
-                            user = FirebaseAuth.getInstance().currentUser
+                            // The listener above will handle updating the 'user' state
                         }
                     } else {
                         // User is logged in, show the actual app
-                        AppNavGraph(navController = navController)
+                        // Use user.uid as a key to ensure we reset navigation and state for every new session
+                        key(user?.uid) {
+                            val navController = rememberNavController()
+                            AppNavGraph(navController = navController)
+                        }
                     }
                 }
             }

@@ -20,11 +20,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.homebase.data.view.SettingsViewModel
+import com.example.homebase.data.view.AuthViewModel
 import com.example.homebase.ui.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(navController: NavHostController, viewModel: SettingsViewModel = viewModel()) {
+fun SettingsScreen(
+    navController: NavHostController, 
+    viewModel: SettingsViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
+) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -122,6 +127,28 @@ fun SettingsScreen(navController: NavHostController, viewModel: SettingsViewMode
                 )
 
                 SettingsSwitchItem("Enable location tracking", viewModel.locationTrackingEnabled) { viewModel.locationTrackingEnabled = it }
+
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                // Logout Button
+                Button(
+                    onClick = {
+                        authViewModel.logout {
+                            // The MainActivity will detect the null user and show login
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF4D4D))
+                ) {
+                    Icon(Icons.Default.Logout, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Logout", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -154,8 +181,7 @@ fun SettingsSwitchItem(label: String, checked: Boolean, onToggle: (Boolean) -> U
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+        verticalAlignment = Alignment.CenterVertically) {
         Text(label, color = Color.Black)
         Switch(
             checked = checked,
