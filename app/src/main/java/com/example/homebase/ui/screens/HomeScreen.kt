@@ -21,19 +21,29 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.homebase.ui.navigation.Screen
 import com.example.homebase.data.view.ScheduleViewModel
+import com.example.homebase.data.view.NotificationViewModel
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.example.homebase.data.model.ScheduleEvent
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavHostController, viewModel: ScheduleViewModel) {
+fun HomeScreen(
+    navController: NavHostController, 
+    viewModel: ScheduleViewModel,
+    notificationViewModel: NotificationViewModel = viewModel()
+) {
     LaunchedEffect(Unit) {
         viewModel.fetchScheduleFromFirebase()
     }
 
     val todayClasses by viewModel.todayClasses
+    val notifications by notificationViewModel.notifications.collectAsState()
+    val unreadCount = notifications.size
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -47,9 +57,17 @@ fun HomeScreen(navController: NavHostController, viewModel: ScheduleViewModel) {
                 },
                 actions = {
                     IconButton(onClick = { navController.navigate(Screen.Notifications.route) }) {
-                        BadgedBox(
-                            badge = { Badge { Text("3") } }
-                        ) {
+                        if (unreadCount > 0) {
+                            BadgedBox(
+                                badge = { Badge { Text("$unreadCount") } }
+                            ) {
+                                Icon(
+                                    Icons.Default.Notifications,
+                                    contentDescription = "Notifications",
+                                    tint = Color.White
+                                )
+                            }
+                        } else {
                             Icon(
                                 Icons.Default.Notifications,
                                 contentDescription = "Notifications",
@@ -59,7 +77,6 @@ fun HomeScreen(navController: NavHostController, viewModel: ScheduleViewModel) {
                     }
                 },
                 navigationIcon = {
-                    
                     Surface(
                         modifier = Modifier
                             .padding(start = 16.dp)
