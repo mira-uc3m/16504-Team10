@@ -30,65 +30,79 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import androidx.navigation.NavController
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleScreen(navController: NavController, viewModel: ScheduleViewModel = viewModel()) {
     LaunchedEffect(Unit) {
         viewModel.fetchScheduleFromFirebase()
     }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF3F51B5))
-    ) {
-        // Top Header
-        Row(
-            modifier = Modifier.statusBarsPadding(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.Default.KeyboardArrowLeft, contentDescription = null, tint = Color.White)
-            }
-            Text(
-                "My Schedule",
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 8.dp)
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "My Schedule",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.KeyboardArrowLeft, contentDescription = null, tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color(0xFF3022A6)
+                )
             )
-        }
+        },
+        containerColor = Color(0xFF3022A6)
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(top = paddingValues.calculateTopPadding())
+                .fillMaxSize()
+                .background(Color(0xFF3022A6))
+        ) {
+            CalendarSection(viewModel)
 
-        CalendarSection(viewModel)
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Bottom Class List Section
-        if (viewModel.filteredActivities.isNotEmpty()) {
-            ActivityListSection(navController, viewModel)
-        } else {
-            // "Add to Schedule" button for empty days
+            // Bottom Class List Section - taking the rest of the space
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
                 color = Color.White
             ) {
-                Column(modifier = Modifier.padding(24.dp)) {
-                    Text(
-                        text = viewModel.selectedDate.format(DateTimeFormatter.ofPattern("MMMM dd, yyyy")),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = Color.Gray
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(
-                        onClick = { navController.navigate(Screen.AddSchedule.route) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F51B5)),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Add to Schedule")
+                if (viewModel.filteredActivities.isNotEmpty()) {
+                    ActivityListSection(navController, viewModel)
+                } else {
+                    // Empty state
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Text(
+                            text = viewModel.selectedDate.format(DateTimeFormatter.ofPattern("MMMM dd, yyyy")),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            Text("No classes scheduled for today.", color = Color.Gray)
+                        }
+                        Button(
+                            onClick = { navController.navigate(Screen.AddSchedule.route) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3022A6)),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Add to Schedule")
+                        }
                     }
                 }
             }
@@ -139,73 +153,67 @@ fun ActivityListSection(navController: NavController, viewModel: ScheduleViewMod
         )
     }
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-        color = Color.White
-    ) {
-        Column(modifier = Modifier.padding(24.dp)) {
-            Text(
-                text = viewModel.selectedDate.format(DateTimeFormatter.ofPattern("MMMM dd, yyyy")),
-                style = MaterialTheme.typography.labelLarge,
-                color = Color.Gray
-            )
+    Column(modifier = Modifier.padding(24.dp)) {
+        Text(
+            text = viewModel.selectedDate.format(DateTimeFormatter.ofPattern("MMMM dd, yyyy")),
+            style = MaterialTheme.typography.labelLarge,
+            color = Color.Gray
+        )
 
-            LazyColumn(
-                modifier = Modifier.heightIn(max = 400.dp).padding(top = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(viewModel.filteredActivities) { activity ->
-                    val displayIcon = icons.getOrElse(activity.iconIndex) { Icons.Default.School }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onLongPress = {
-                                        eventToDelete = activity
-                                        showDeleteDialog = true
-                                    }
-                                )
-                            }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .background(Color(activity.color), RoundedCornerShape(12.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                displayIcon,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
+        LazyColumn(
+            modifier = Modifier.weight(1f).padding(top = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(viewModel.filteredActivities) { activity ->
+                val displayIcon = icons.getOrElse(activity.iconIndex) { Icons.Default.School }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onLongPress = {
+                                    eventToDelete = activity
+                                    showDeleteDialog = true
+                                }
                             )
                         }
-                        Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
-                            Text(activity.name, fontWeight = FontWeight.Bold)
-                            Text(activity.location, color = Color.Gray, fontSize = 12.sp)
-                        }
-                        Text(activity.time, fontWeight = FontWeight.Bold, color = Color(0xFF3F51B5))
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color(activity.color), RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            displayIcon,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
-                    HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFF0F0F0))
+                    Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
+                        Text(activity.name, fontWeight = FontWeight.Bold)
+                        Text(activity.location, color = Color.Gray, fontSize = 12.sp)
+                    }
+                    Text(activity.time, fontWeight = FontWeight.Bold, color = Color(0xFF3022A6))
                 }
+                HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFF0F0F0))
             }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
-                onClick = { navController.navigate(Screen.AddSchedule.route) },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F51B5)),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Add to Schedule")
-            }
+        Button(
+            onClick = { navController.navigate(Screen.AddSchedule.route) },
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3022A6)),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Add to Schedule")
         }
     }
 }
@@ -214,18 +222,15 @@ fun ActivityListSection(navController: NavController, viewModel: ScheduleViewMod
 fun CalendarSection(viewModel: ScheduleViewModel) {
     val currentMonth = viewModel.currentMonth
     val daysInMonth = currentMonth.lengthOfMonth()
-
-    // Find what day of the week the 1st falls on
-    // .value returns 1 (Mon) to 7 (Sun). We adjust so Sun = 0.
     val firstDayOfMonth = currentMonth.atDay(1)
     val firstDayOfWeekIndex = firstDayOfMonth.dayOfWeek.value % 7
+    
     Card(
-        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Month Navigation Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -246,7 +251,6 @@ fun CalendarSection(viewModel: ScheduleViewModel) {
                 }
             }
 
-            // Day Labels
             val daysOfWeek = listOf("Su", "Mo", "Tu", "We", "Th", "Fr", "Sa")
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 daysOfWeek.forEach { day ->
@@ -254,16 +258,13 @@ fun CalendarSection(viewModel: ScheduleViewModel) {
                 }
             }
 
-            // Dynamic Grid
             LazyVerticalGrid(
                 columns = GridCells.Fixed(7),
-                modifier = Modifier.height(260.dp).padding(top = 8.dp),
+                modifier = Modifier.height(220.dp).padding(top = 8.dp),
                 userScrollEnabled = false
             ) {
-                // Empty spacers for the start of the month
                 items(firstDayOfWeekIndex) { Spacer(modifier = Modifier.size(32.dp)) }
 
-                // Add the actual days
                 items(daysInMonth) { index ->
                     val dayNum = index + 1
                     val date = currentMonth.atDay(dayNum)
@@ -278,8 +279,8 @@ fun CalendarSection(viewModel: ScheduleViewModel) {
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = if (isSelected) Color(0xFF3F51B5) else Color.Transparent,
-                            border = if (isToday && !isSelected) BorderStroke(1.dp, Color(0xFF3F51B5)) else null,
+                            color = if (isSelected) Color(0xFF3022A6) else Color.Transparent,
+                            border = if (isToday && !isSelected) BorderStroke(1.dp, Color(0xFF3022A6)) else null,
                             modifier = Modifier.size(32.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -296,7 +297,7 @@ fun CalendarSection(viewModel: ScheduleViewModel) {
                                 modifier = Modifier
                                     .padding(top = 2.dp)
                                     .size(4.dp)
-                                    .background(Color(0xFF3F51B5), CircleShape)
+                                    .background(Color(0xFF3022A6), CircleShape)
                             )
                         }
                     }
