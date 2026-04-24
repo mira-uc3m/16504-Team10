@@ -1,5 +1,9 @@
 package com.example.homebase.ui.screens
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -14,18 +18,30 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.homebase.NotificationHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavHostController) {
+    val context = LocalContext.current
+    val notificationHelper = remember { NotificationHelper(context) }
+    
     var pushNotifications by remember { mutableStateOf(true) }
     var classReminders by remember { mutableStateOf(false) }
     var checklistReminders by remember { mutableStateOf(true) }
     var locationTracking by remember { mutableStateOf(false) }
+
+    // Launcher for notification permission
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        pushNotifications = isGranted
+    }
 
     Scaffold(
         topBar = {
@@ -75,7 +91,13 @@ fun SettingsScreen(navController: NavHostController) {
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            SettingsSwitchItem("Allow Push Notifications", pushNotifications) { pushNotifications = it }
+            SettingsSwitchItem("Allow Push Notifications", pushNotifications) { checked ->
+                if (checked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    pushNotifications = checked
+                }
+            }
             SettingsSwitchItem("Class Reminders", classReminders) { classReminders = it }
             SettingsSwitchItem("Checklist Reminders", checklistReminders) { checklistReminders = it }
 
