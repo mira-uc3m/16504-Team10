@@ -1,15 +1,19 @@
 package com.example.homebase.data.view
 
+import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import com.example.homebase.NotificationHelper
 import com.example.homebase.data.model.ClassActivity
 import java.time.LocalDate
 import java.time.YearMonth
 
-class ScheduleViewModel : ViewModel() {
+class ScheduleViewModel(application: Application) : AndroidViewModel(application) {
+    private val notificationHelper = NotificationHelper(application)
+    
     var selectedDate by mutableStateOf(LocalDate.now())
     var currentMonth by mutableStateOf(YearMonth.now())
 
@@ -18,6 +22,24 @@ class ScheduleViewModel : ViewModel() {
         ClassActivity("1", "Mobile Applications", "4.0.G01", "9:00 h", LocalDate.now(), 0xFF3F51B5),
         ClassActivity("2", "Class 2", "1.0.D01", "11:00 h", LocalDate.now().plusDays(2), 0xFFE91E63)
     )
+
+    init {
+        // Trigger a real notification when the app loads or data is ready
+        // In a production app, this would be tied to a background alarm/worker
+        checkAndSendReminders()
+    }
+
+    private fun checkAndSendReminders() {
+        val today = LocalDate.now()
+        val todaysClasses = allActivities.filter { it.date == today }
+        
+        todaysClasses.forEach { classActivity ->
+            notificationHelper.sendClassReminderNotification(
+                classActivity.name,
+                classActivity.time
+            )
+        }
+    }
 
     // Filter activities based on the selected date
     val filteredActivities: List<ClassActivity>

@@ -77,40 +77,12 @@ fun HomeScreen(navController: NavHostController) {
                 )
             )
         },
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color.White,
-                tonalElevation = 8.dp
-            ) {
-                val navItems = listOf(Screen.Home, Screen.Settings)
-                navItems.forEach { screen ->
-                    val isSelected = screen == Screen.Home
-                    NavigationBarItem(
-                        icon = { Icon(screen.icon, contentDescription = screen.title) },
-                        label = { Text(screen.title) },
-                        selected = isSelected,
-                        onClick = {
-                            if (!isSelected) {
-                                navController.navigate(screen.route)
-                            }
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color.White,
-                            selectedTextColor = Color(0xFF3022A6),
-                            indicatorColor = Color(0xFF3022A6),
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray
-                        )
-                    )
-                }
-            }
-        },
-        containerColor = Color(0xFF3022A6)
+        containerColor = Color(0xFF3022A6) // Blue only visible behind the rounded top
     ) { paddingValues ->
         // Main content area with rounded top corners
         Surface(
             modifier = Modifier
-                .padding(paddingValues)
+                .padding(top = paddingValues.calculateTopPadding()) // Only pad the top
                 .fillMaxSize(),
             color = Color.White,
             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
@@ -135,16 +107,15 @@ fun HomeScreen(navController: NavHostController) {
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        // Demo data
                         items(5) { index ->
                             ClassListItem(index)
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // 6 Buttons Section (Fixed at bottom)
+                // 6 Buttons Section
                 val gridItems = listOf(
                     Triple("Currency\nConversion", Icons.Default.AccountBalanceWallet, "currency_screen"),
                     Triple("Campus\nMap", Icons.Default.LocationOn, "map"),
