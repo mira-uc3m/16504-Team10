@@ -1,5 +1,6 @@
 package com.example.homebase.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,11 +13,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.homebase.R
 import com.example.homebase.ui.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,26 +39,37 @@ fun HomeScreen(navController: NavHostController) {
                 actions = {
                     IconButton(onClick = { /* Handle Notifications */ }) {
                         BadgedBox(
-                            badge = { Badge { Text("3") } }
+                            badge = { 
+                                Badge(
+                                    containerColor = Color(0xFFFF4D4D),
+                                    contentColor = Color.White
+                                ) { 
+                                    Text("3") 
+                                } 
+                            }
                         ) {
                             Icon(
                                 Icons.Default.Notifications,
                                 contentDescription = "Notifications",
-                                tint = Color.White
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
                             )
                         }
                     }
                 },
                 navigationIcon = {
-                    
                     Surface(
                         modifier = Modifier
                             .padding(start = 16.dp)
-                            .size(36.dp),
+                            .size(40.dp),
                         shape = RoundedCornerShape(4.dp),
                         color = Color.White
                     ) {
-                        // Logo content could go here
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_homebase_logo),
+                            contentDescription = "Home Base Logo",
+                            modifier = Modifier.padding(4.dp)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -121,7 +135,7 @@ fun HomeScreen(navController: NavHostController) {
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        // Demo data - TODO: add real data
+                        // Demo data
                         items(5) { index ->
                             ClassListItem(index)
                         }
