@@ -1,6 +1,7 @@
 package com.example.homebase.ui.screens
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,8 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,10 +37,6 @@ fun ChecklistScreen(
     
     var selectedTerm by remember { mutableStateOf("Fall Term") }
     var showAddDialog by remember { mutableStateOf(false) }
-
-    // State for expandable sections
-    var isThisWeekExpanded by remember { mutableStateOf(true) }
-    var isUpcomingExpanded by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = {
@@ -106,8 +102,6 @@ fun ChecklistScreen(
                         onClick = { 
                             selectedTerm = "Fall Term"
                             viewModel.loadFallTerm()
-                            isThisWeekExpanded = true
-                            isUpcomingExpanded = true
                         },
                         modifier = Modifier.weight(1f)
                     )
@@ -117,8 +111,6 @@ fun ChecklistScreen(
                         onClick = { 
                             selectedTerm = "Winter Term"
                             viewModel.loadWinterTerm()
-                            isThisWeekExpanded = true
-                            isUpcomingExpanded = true
                         },
                         modifier = Modifier.weight(1f)
                     )
@@ -164,47 +156,26 @@ fun ChecklistScreen(
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 100.dp)
+                    contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
                     val grouped = items.groupBy { it.category }
                     
                     grouped.forEach { (category, categoryItems) ->
-                        val isExpanded = if (category == "This Week") isThisWeekExpanded else isUpcomingExpanded
-                        
                         item {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { 
-                                        if (category == "This Week") isThisWeekExpanded = !isThisWeekExpanded
-                                        else isUpcomingExpanded = !isUpcomingExpanded
-                                    }
-                                    .padding(vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = category,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp,
-                                    color = Color.Gray
-                                )
-                                Icon(
-                                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                    contentDescription = if (isExpanded) "Collapse" else "Expand",
-                                    tint = Color.Gray
-                                )
-                            }
+                            Text(
+                                text = category,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = Color.Gray,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
                         }
-                        
-                        if (isExpanded) {
-                            items(categoryItems) { item ->
-                                ChecklistCard(
-                                    title = item.title,
-                                    isChecked = item.isDone,
-                                    onToggle = { viewModel.toggleItem(item.id) }
-                                )
-                            }
+                        items(categoryItems) { item ->
+                            ChecklistCard(
+                                title = item.title,
+                                isChecked = item.isDone,
+                                onToggle = { viewModel.toggleItem(item.id) }
+                            )
                         }
                     }
                 }
@@ -343,6 +314,12 @@ fun ChecklistCard(
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (isChecked) Color.Gray else Color(0xFF333333),
                 fontWeight = if (isChecked) FontWeight.Normal else FontWeight.Medium
+            )
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = Color.LightGray,
+                modifier = Modifier.size(20.dp)
             )
         }
     }
