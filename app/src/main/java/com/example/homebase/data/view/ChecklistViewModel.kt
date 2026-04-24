@@ -1,7 +1,11 @@
 package com.example.homebase.data.view
 
+import android.app.Application
+import android.content.Context
 import androidx.compose.runtime.mutableStateListOf
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 data class ChecklistItem(
     val id: Int,
@@ -9,15 +13,35 @@ data class ChecklistItem(
     val isDone: Boolean = false,
     val category: String = "This Week",
     val subItems: List<ChecklistItem> = emptyList(),
-    val hasDetailArrow: Boolean = false // For items with ">" instead of dropdown
+    val hasDetailArrow: Boolean = false
 )
 
-class ChecklistViewModel : ViewModel() {
+class ChecklistViewModel(application: Application) : AndroidViewModel(application) {
     private val _items = mutableStateListOf<ChecklistItem>()
     val items: List<ChecklistItem> get() = _items
 
+    private val sharedPreferences = application.getSharedPreferences("checklist_prefs", Context.MODE_PRIVATE)
+    private val gson = Gson()
+
     init {
-        loadFallTerm()
+        loadSavedData()
+    }
+
+    private fun loadSavedData() {
+        val json = sharedPreferences.getString("checklist_items", null)
+        if (json != null) {
+            val type = object : TypeToken<List<ChecklistItem>>() {}.type
+            val savedItems: List<ChecklistItem> = gson.fromJson(json, type)
+            _items.clear()
+            _items.addAll(savedItems)
+        } else {
+            loadFallTerm() // Default data if nothing saved
+        }
+    }
+
+    private fun saveData() {
+        val json = gson.toJson(_items.toList())
+        sharedPreferences.edit().putString("checklist_items", json).apply()
     }
 
     fun loadFallTerm() {
@@ -39,6 +63,7 @@ class ChecklistViewModel : ViewModel() {
             ChecklistItem(5, "Activate Insurance", false, "Upcoming", hasDetailArrow = true),
             ChecklistItem(6, "Get Metro Card", false, "Upcoming")
         ))
+        saveData()
     }
 
     fun loadWinterTerm() {
@@ -48,6 +73,7 @@ class ChecklistViewModel : ViewModel() {
             ChecklistItem(8, "Warm Clothing Shopping", false, "This Week"),
             ChecklistItem(9, "Health Insurance Renewal", false, "Upcoming")
         ))
+        saveData()
     }
 
     fun toggleItem(id: Int, parentId: Int? = null) {
@@ -66,11 +92,13 @@ class ChecklistViewModel : ViewModel() {
                 _items[parentIndex] = parent.copy(subItems = updatedSubItems)
             }
         }
+        saveData()
     }
 
     fun addItem(title: String, category: String) {
         val newId = (System.currentTimeMillis() % 10000).toInt()
         _items.add(ChecklistItem(newId, title, false, category))
+        saveData()
     }
 
     fun getProgress(): Float {
