@@ -17,15 +17,15 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     var selectedDate by mutableStateOf(LocalDate.now())
     var currentMonth by mutableStateOf(YearMonth.now())
 
-    // Dummy data to simulate the Figma --> will be replaced by stored data
+    // Populated with Monday's classes from UC3M Class List
     val allActivities = mutableStateListOf(
-        ClassActivity("1", "Mobile Applications", "4.0.G01", "9:00 h", LocalDate.now(), 0xFF3F51B5),
-        ClassActivity("2", "Class 2", "1.0.D01", "11:00 h", LocalDate.now().plusDays(2), 0xFFE91E63)
+        ClassActivity("1", "Mobile Applications", "53461", "9:00 h", LocalDate.now(), 0xFF3022A6),
+        ClassActivity("2", "Computer Architecture", "12345", "11:00 h", LocalDate.now(), 0xFFFF4D4D),
+        ClassActivity("3", "Operating Systems", "67890", "13:00 h", LocalDate.now(), 0xFF2196F3)
     )
 
     init {
         // Trigger a real notification when the app loads or data is ready
-        // In a production app, this would be tied to a background alarm/worker
         checkAndSendReminders()
     }
 

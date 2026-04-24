@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -18,13 +19,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.homebase.R
+import com.example.homebase.data.model.ClassActivity
+import com.example.homebase.data.view.ScheduleViewModel
 import com.example.homebase.ui.navigation.Screen
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavHostController) {
+fun HomeScreen(
+    navController: NavHostController,
+    scheduleViewModel: ScheduleViewModel = viewModel()
+) {
+    val todaysClasses = scheduleViewModel.allActivities.filter { it.date == LocalDate.now() }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -77,12 +87,11 @@ fun HomeScreen(navController: NavHostController) {
                 )
             )
         },
-        containerColor = Color(0xFF3022A6) // Blue only visible behind the rounded top
+        containerColor = Color(0xFF3022A6)
     ) { paddingValues ->
-        // Main content area with rounded top corners
         Surface(
             modifier = Modifier
-                .padding(top = paddingValues.calculateTopPadding()) // Only pad the top
+                .padding(top = paddingValues.calculateTopPadding())
                 .fillMaxSize(),
             color = Color.White,
             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
@@ -103,12 +112,18 @@ fun HomeScreen(navController: NavHostController) {
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        items(5) { index ->
-                            ClassListItem(index)
+                    if (todaysClasses.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("No classes today!", color = Color.Gray)
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items(todaysClasses) { activity ->
+                                ClassListItem(activity)
+                            }
                         }
                     }
                 }
@@ -145,12 +160,15 @@ fun HomeScreen(navController: NavHostController) {
 }
 
 @Composable
-fun ClassListItem(index: Int) {
-    val titles = listOf("Mobile Applications", "Class 2", "Class 3", "Class 4", "Class 5")
-    val rooms = listOf("4.0.G01", "1.0.D01", "4.0.D04", "7.0.D06", "1.0.D01")
-    val times = listOf("9:00 h", "11:00 h", "13:00 h", "15:00 h", "17:00 h")
-    val colors = listOf(Color(0xFF3022A6), Color(0xFFFF4D4D), Color(0xFF2196F3), Color(0xFFFFB300), Color(0xFF4DB6AC))
-    val icons = listOf(Icons.Default.WaterDrop, Icons.Default.ConfirmationNumber, Icons.Default.PushPin, Icons.Default.Dashboard, Icons.Default.CalendarToday)
+fun ClassListItem(activity: ClassActivity) {
+    // Mapping icon based on activity ID or name for visual variety
+    val icon = when (activity.name) {
+        "Mobile Applications" -> Icons.Default.WaterDrop
+        "Class 2" -> Icons.Default.ConfirmationNumber
+        "Class 3" -> Icons.Default.PushPin
+        "Class 4" -> Icons.Default.Dashboard
+        else -> Icons.Default.CalendarToday
+    }
 
     Column {
         Row(
@@ -162,10 +180,10 @@ fun ClassListItem(index: Int) {
             Surface(
                 modifier = Modifier.size(44.dp),
                 shape = RoundedCornerShape(12.dp),
-                color = colors[index % colors.size]
+                color = Color(activity.color)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(icons[index % icons.size], contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                 }
             }
 
@@ -173,20 +191,20 @@ fun ClassListItem(index: Int) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    titles[index % titles.size],
+                    activity.name,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyLarge,
                     color = Color(0xFF333333)
                 )
                 Text(
-                    rooms[index % rooms.size],
+                    activity.room,
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
             }
 
             Text(
-                times[index % times.size],
+                activity.time,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF3022A6),
                 style = MaterialTheme.typography.bodyMedium
