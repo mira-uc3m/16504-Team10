@@ -13,6 +13,7 @@ import com.example.homebase.ui.screens.SettingsScreen
 import com.example.homebase.ui.screens.MapScreen
 import com.example.homebase.ui.screens.QuickLinksScreen
 import com.example.homebase.ui.screens.ClassListScreen
+import com.example.homebase.ui.screens.ChecklistScreen
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -51,6 +52,9 @@ fun AppNavGraph(navController: NavHostController) {
         }
         composable(route = "classlist_screen") {
             ClassListScreen(navController)
+        }
+        composable(route = "checklist_screen") {
+            ChecklistScreen(navController)
         }
     }
 }
