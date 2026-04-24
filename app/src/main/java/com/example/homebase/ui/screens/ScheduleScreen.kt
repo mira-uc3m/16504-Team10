@@ -11,9 +11,15 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.ConfirmationNumber
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,14 +40,21 @@ fun ScheduleScreen(navController: NavController, viewModel: ScheduleViewModel = 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF3F51B5))
+            .background(Color(0xFF3022A6))
     ) {
         // Top Header
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.KeyboardArrowLeft, contentDescription = null, tint = Color.White)
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "Back",
+                    tint = Color.White,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
             Text(
                 "My Schedule",
                 color = Color.White,
@@ -61,7 +74,7 @@ fun ScheduleScreen(navController: NavController, viewModel: ScheduleViewModel = 
         } else {
             // "Add to Schedule" button for empty days
             Button(
-                onClick = { navController.navigate(Screen.AddSchedule.route) }, // TODO: add functionality --> iteration 2
+                onClick = { navController.navigate(Screen.AddSchedule.route) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -69,8 +82,8 @@ fun ScheduleScreen(navController: NavController, viewModel: ScheduleViewModel = 
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF3F51B5))
-                Text("Add to Schedule", color = Color(0xFF3F51B5))
+                Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF3022A6))
+                Text("Add to Schedule", color = Color(0xFF3022A6))
             }
         }
     }
@@ -92,25 +105,34 @@ fun ActivityListSection(navController: NavController, viewModel: ScheduleViewMod
 
             LazyColumn(modifier = Modifier.padding(top = 16.dp)) {
                 items(viewModel.filteredActivities) { activity ->
+                    val icon = when (activity.name) {
+                        "Mobile Applications" -> Icons.Default.WaterDrop
+                        "Computer Architecture" -> Icons.Default.ConfirmationNumber
+                        "Operating Systems" -> Icons.Default.PushPin
+                        "Software Engineering" -> Icons.Default.Dashboard
+                        else -> Icons.Default.CalendarToday
+                    }
+                    
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(Color(activity.color), RoundedCornerShape(8.dp)),
-                            contentAlignment = Alignment.Center
+                        Surface(
+                            modifier = Modifier.size(44.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(activity.color)
                         ) {
-                            // Icon placeholder
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            }
                         }
                         Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
-                            Text(activity.name, fontWeight = FontWeight.Bold)
+                            Text(activity.name, fontWeight = FontWeight.Bold, color = Color(0xFF333333))
                             Text(activity.room, color = Color.Gray, fontSize = 12.sp)
                         }
-                        Text(activity.time, fontWeight = FontWeight.Bold, color = Color(0xFF3F51B5))
+                        Text(activity.time, fontWeight = FontWeight.Bold, color = Color(0xFF3022A6))
                     }
                 }
             }
@@ -118,7 +140,7 @@ fun ActivityListSection(navController: NavController, viewModel: ScheduleViewMod
             Button(
                 onClick = { navController.navigate(Screen.AddSchedule.route) },
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F51B5))
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3022A6))
             ) {
                 Icon(Icons.Default.Add, contentDescription = null)
                 Text("Add to Schedule")
@@ -132,8 +154,6 @@ fun CalendarSection(viewModel: ScheduleViewModel) {
     val currentMonth = viewModel.currentMonth
     val daysInMonth = currentMonth.lengthOfMonth()
 
-    // Find what day of the week the 1st falls on
-    // .value returns 1 (Mon) to 7 (Sun). We adjust so Sun = 0.
     val firstDayOfMonth = currentMonth.atDay(1)
     val firstDayOfWeekIndex = firstDayOfMonth.dayOfWeek.value % 7
     Card(
@@ -177,10 +197,8 @@ fun CalendarSection(viewModel: ScheduleViewModel) {
                 modifier = Modifier.height(260.dp).padding(top = 8.dp),
                 userScrollEnabled = false
             ) {
-                // Empty spacers for the start of the month
                 items(firstDayOfWeekIndex) { Spacer(modifier = Modifier.size(32.dp)) }
 
-                // Add the actual days
                 items(daysInMonth) { index ->
                     val dayNum = index + 1
                     val date = currentMonth.atDay(dayNum)
@@ -195,8 +213,8 @@ fun CalendarSection(viewModel: ScheduleViewModel) {
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = if (isSelected) Color(0xFF3F51B5) else Color.Transparent,
-                            border = if (isToday && !isSelected) BorderStroke(1.dp, Color(0xFF3F51B5)) else null,
+                            color = if (isSelected) Color(0xFF3022A6) else Color.Transparent,
+                            border = if (isToday && !isSelected) BorderStroke(1.dp, Color(0xFF3022A6)) else null,
                             modifier = Modifier.size(32.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -213,7 +231,7 @@ fun CalendarSection(viewModel: ScheduleViewModel) {
                                 modifier = Modifier
                                     .padding(top = 2.dp)
                                     .size(4.dp)
-                                    .background(Color(0xFF3F51B5), CircleShape)
+                                    .background(Color(0xFF3022A6), CircleShape)
                             )
                         }
                     }
