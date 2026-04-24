@@ -7,7 +7,9 @@ data class ChecklistItem(
     val id: Int,
     val title: String,
     val isDone: Boolean = false,
-    val category: String = "This Week" // "This Week" or "Upcoming"
+    val category: String = "This Week",
+    val subItems: List<ChecklistItem> = emptyList(),
+    val hasDetailArrow: Boolean = false // For items with ">" instead of dropdown
 )
 
 class ChecklistViewModel : ViewModel() {
@@ -15,51 +17,65 @@ class ChecklistViewModel : ViewModel() {
     val items: List<ChecklistItem> get() = _items
 
     init {
-        // Initial data matching the user's Figma/request
         loadFallTerm()
     }
 
     fun loadFallTerm() {
         _items.clear()
         _items.addAll(listOf(
-            ChecklistItem(1, "Visa", false, "This Week"),
-            ChecklistItem(2, "Flight", false, "This Week"),
-            ChecklistItem(3, "Accommodation", false, "This Week"),
-            ChecklistItem(4, "School Enrollment", false, "This Week"),
-            ChecklistItem(5, "Learn Route to School", false, "This Week"),
-            ChecklistItem(6, "Pay Rent", false, "This Week"),
-            ChecklistItem(7, "Plan Travel", false, "Upcoming"),
-            ChecklistItem(8, "Get Metro Card", false, "Upcoming")
+            ChecklistItem(1, "Visa", false, "This Week", subItems = listOf(
+                ChecklistItem(101, "Apostille Documents", false),
+                ChecklistItem(102, "Medical Certificate", false)
+            )),
+            ChecklistItem(2, "School", false, "This Week", subItems = listOf(
+                ChecklistItem(201, "Orientation Sign Up", false),
+                ChecklistItem(202, "Enroll in Classes", false)
+            )),
+            ChecklistItem(3, "Book Flights", false, "This Week", hasDetailArrow = true),
+            ChecklistItem(4, "Accommodation", false, "Upcoming", subItems = listOf(
+                ChecklistItem(301, "Pay Rent", false),
+                ChecklistItem(302, "Key Pickup", false)
+            )),
+            ChecklistItem(5, "Activate Insurance", false, "Upcoming", hasDetailArrow = true),
+            ChecklistItem(6, "Get Metro Card", false, "Upcoming")
         ))
     }
 
     fun loadWinterTerm() {
         _items.clear()
         _items.addAll(listOf(
-            ChecklistItem(9, "Winter Visa Extension", false, "This Week"),
-            ChecklistItem(10, "Warm Clothing Shopping", false, "This Week"),
-            ChecklistItem(11, "Winter Housing Check", false, "This Week"),
-            ChecklistItem(12, "Health Insurance Renewal", false, "Upcoming"),
-            ChecklistItem(13, "Holiday Travel Planning", false, "Upcoming")
+            ChecklistItem(7, "Winter Visa Extension", false, "This Week"),
+            ChecklistItem(8, "Warm Clothing Shopping", false, "This Week"),
+            ChecklistItem(9, "Health Insurance Renewal", false, "Upcoming")
         ))
     }
 
-    fun toggleItem(id: Int) {
-        val index = _items.indexOfFirst { it.id == id }
-        if (index != -1) {
-            val item = _items[index]
-            _items[index] = item.copy(isDone = !item.isDone)
+    fun toggleItem(id: Int, parentId: Int? = null) {
+        if (parentId == null) {
+            val index = _items.indexOfFirst { it.id == id }
+            if (index != -1) {
+                _items[index] = _items[index].copy(isDone = !_items[index].isDone)
+            }
+        } else {
+            val parentIndex = _items.indexOfFirst { it.id == parentId }
+            if (parentIndex != -1) {
+                val parent = _items[parentIndex]
+                val updatedSubItems = parent.subItems.map { 
+                    if (it.id == id) it.copy(isDone = !it.isDone) else it 
+                }
+                _items[parentIndex] = parent.copy(subItems = updatedSubItems)
+            }
         }
     }
 
     fun addItem(title: String, category: String) {
-        val newId = (_items.maxOfOrNull { it.id } ?: 0) + 1
+        val newId = (System.currentTimeMillis() % 10000).toInt()
         _items.add(ChecklistItem(newId, title, false, category))
     }
 
     fun getProgress(): Float {
-        if (_items.isEmpty()) return 0f
-        val completed = _items.count { it.isDone }
-        return completed.toFloat() / _items.size
+        val allItems = _items.flatMap { listOf(it) + it.subItems }
+        if (allItems.isEmpty()) return 0f
+        return allItems.count { it.isDone }.toFloat() / allItems.size
     }
 }
