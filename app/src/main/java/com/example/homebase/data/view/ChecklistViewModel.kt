@@ -15,6 +15,7 @@ class ChecklistViewModel : ViewModel() {
     val items: List<ChecklistItem> get() = _items
 
     init {
+        // Initial data matching the user's Figma/request
         loadFallTerm()
     }
 
