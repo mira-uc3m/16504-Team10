@@ -1,6 +1,5 @@
 package com.example.homebase.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,7 +9,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
@@ -26,7 +24,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.homebase.data.view.ChecklistViewModel
-import com.example.homebase.data.view.ChecklistItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +37,10 @@ fun ChecklistScreen(
     
     var selectedTerm by remember { mutableStateOf("Fall Term") }
     var showAddDialog by remember { mutableStateOf(false) }
+
+    // State for expandable sections
+    var isThisWeekExpanded by remember { mutableStateOf(true) }
+    var isUpcomingExpanded by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = {
@@ -105,6 +106,8 @@ fun ChecklistScreen(
                         onClick = { 
                             selectedTerm = "Fall Term"
                             viewModel.loadFallTerm()
+                            isThisWeekExpanded = true
+                            isUpcomingExpanded = true
                         },
                         modifier = Modifier.weight(1f)
                     )
@@ -114,6 +117,8 @@ fun ChecklistScreen(
                         onClick = { 
                             selectedTerm = "Winter Term"
                             viewModel.loadWinterTerm()
+                            isThisWeekExpanded = true
+                            isUpcomingExpanded = true
                         },
                         modifier = Modifier.weight(1f)
                     )
@@ -158,27 +163,48 @@ fun ChecklistScreen(
                 // Checklist Items
                 LazyColumn(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = 100.dp)
                 ) {
                     val grouped = items.groupBy { it.category }
                     
                     grouped.forEach { (category, categoryItems) ->
+                        val isExpanded = if (category == "This Week") isThisWeekExpanded else isUpcomingExpanded
+                        
                         item {
-                            Text(
-                                text = category,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = Color.Gray,
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { 
+                                        if (category == "This Week") isThisWeekExpanded = !isThisWeekExpanded
+                                        else isUpcomingExpanded = !isUpcomingExpanded
+                                    }
+                                    .padding(vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = category,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp,
+                                    color = Color.Gray
+                                )
+                                Icon(
+                                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                                    tint = Color.Gray
+                                )
+                            }
                         }
                         
-                        items(categoryItems) { item ->
-                            ExpandableChecklistCard(
-                                item = item,
-                                onToggle = { id, parentId -> viewModel.toggleItem(id, parentId) }
-                            )
+                        if (isExpanded) {
+                            items(categoryItems) { item ->
+                                ChecklistCard(
+                                    title = item.title,
+                                    isChecked = item.isDone,
+                                    onToggle = { viewModel.toggleItem(item.id) }
+                                )
+                            }
                         }
                     }
                 }
@@ -194,100 +220,6 @@ fun ChecklistScreen(
                 showAddDialog = false
             }
         )
-    }
-}
-
-@Composable
-fun ExpandableChecklistCard(
-    item: ChecklistItem,
-    onToggle: (Int, Int?) -> Unit
-) {
-    var isExpanded by remember { mutableStateOf(false) }
-    val hasSubItems = item.subItems.isNotEmpty()
-
-    Column {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { if (hasSubItems) isExpanded = !isExpanded else onToggle(item.id, null) },
-            shape = RoundedCornerShape(16.dp),
-            color = Color(0xFFF8F9FA),
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp, 
-                if (item.isDone) Color(0xFF3022A6).copy(alpha = 0.5f) else Color.Transparent
-            )
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Checkbox(
-                    checked = item.isDone,
-                    onCheckedChange = { onToggle(item.id, null) },
-                    colors = CheckboxDefaults.colors(checkedColor = Color(0xFF3022A6))
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = item.title,
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (item.isDone) Color.Gray else Color(0xFF333333),
-                    fontWeight = if (item.isDone) FontWeight.Normal else FontWeight.Medium
-                )
-                
-                if (hasSubItems) {
-                    Icon(
-                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(24.dp)
-                    )
-                } else if (item.hasDetailArrow) {
-                    Icon(
-                        Icons.Default.ArrowRight,
-                        contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-        }
-
-        AnimatedVisibility(visible = isExpanded) {
-            Column(
-                modifier = Modifier
-                    .padding(start = 24.dp, top = 4.dp, bottom = 4.dp)
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                item.subItems.forEach { subItem ->
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onToggle(subItem.id, item.id) },
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFFF1F4F5)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Checkbox(
-                                checked = subItem.isDone,
-                                onCheckedChange = { onToggle(subItem.id, item.id) },
-                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF3022A6))
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = subItem.title,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (subItem.isDone) Color.Gray else Color(0xFF333333)
-                            )
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -375,5 +307,43 @@ fun TermTab(
             fontWeight = FontWeight.Bold,
             fontSize = 14.sp
         )
+    }
+}
+
+@Composable
+fun ChecklistCard(
+    title: String,
+    isChecked: Boolean,
+    onToggle: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggle() },
+        shape = RoundedCornerShape(16.dp),
+        color = Color(0xFFF8F9FA),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp, 
+            if (isChecked) Color(0xFF3022A6).copy(alpha = 0.5f) else Color.Transparent
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = isChecked,
+                onCheckedChange = { onToggle() },
+                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF3022A6))
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = title,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (isChecked) Color.Gray else Color(0xFF333333),
+                fontWeight = if (isChecked) FontWeight.Normal else FontWeight.Medium
+            )
+        }
     }
 }
