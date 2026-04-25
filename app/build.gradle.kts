@@ -84,6 +84,12 @@ dependencies {
     // Fix: Explicitly use string dependency to avoid version catalog issues
     implementation("com.google.android.gms:play-services-location:21.0.1")
 
+    // Splash Screen
+    implementation(libs.androidx.core.splashscreen)
+    
+    // Material Components for XML themes
+    implementation(libs.material)
+
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:34.11.0"))
     implementation("com.google.firebase:firebase-analytics")
