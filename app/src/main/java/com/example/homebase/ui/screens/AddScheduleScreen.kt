@@ -1,5 +1,7 @@
 package com.example.homebase.ui.screens
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,6 +26,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.homebase.data.view.AddScheduleViewModel
 import com.example.homebase.data.view.ScheduleViewModel
 import com.example.homebase.data.model.DateEntry
+import com.example.homebase.data.model.ScheduleEvent
+import com.google.firebase.auth.FirebaseAuth
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.util.Calendar
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,6 +40,9 @@ fun AddScheduleScreen(
     scheduleViewModel: ScheduleViewModel,
     viewModel: AddScheduleViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -123,7 +135,55 @@ fun AddScheduleScreen(
             }
 
             itemsIndexed(viewModel.dateEntries) { index, entry ->
-                DateEntryRow(entry)
+                var dateDisplay by remember(entry.day, entry.month, entry.year) {
+                    mutableStateOf(if (entry.day.isEmpty()) "Choose Date" else "${entry.month}/${entry.day}/${entry.year}")
+                }
+                var timeDisplay by remember(entry.time) {
+                    mutableStateOf(entry.time)
+                }
+                var repeatMode by remember(entry.repeat) {
+                    mutableStateOf(entry.repeat)
+                }
+
+                DateEntryRow(
+                    dateText = dateDisplay,
+                    timeText = timeDisplay,
+                    repeatMode = repeatMode,
+                    onDateClick = {
+                        val calendar = Calendar.getInstance()
+                        DatePickerDialog(
+                            context,
+                            { _, y, m, d ->
+                                entry.year = y.toString()
+                                entry.month = (m + 1).toString()
+                                entry.day = d.toString()
+                                dateDisplay = "${m + 1}/$d/$y"
+                            },
+                            calendar.get(Calendar.YEAR),
+                            calendar.get(Calendar.MONTH),
+                            calendar.get(Calendar.DAY_OF_MONTH)
+                        ).show()
+                    },
+                    onTimeClick = {
+                        val calendar = Calendar.getInstance()
+                        TimePickerDialog(
+                            context,
+                            { _, h, min ->
+                                val time = LocalTime.of(h, min)
+                                val formatted = time.format(DateTimeFormatter.ofPattern("hh:mm a"))
+                                entry.time = formatted
+                                timeDisplay = formatted
+                            },
+                            calendar.get(Calendar.HOUR_OF_DAY),
+                            calendar.get(Calendar.MINUTE),
+                            false
+                        ).show()
+                    },
+                    onRepeatChange = { 
+                        entry.repeat = it 
+                        repeatMode = it
+                    }
+                )
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
@@ -137,12 +197,30 @@ fun AddScheduleScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick = { /* TODO: Save logic */ },
+                    onClick = {
+                        val events = viewModel.dateEntries.filter { it.day.isNotEmpty() }.map { entry ->
+                            ScheduleEvent(
+                                id = UUID.randomUUID().toString(),
+                                userId = currentUserId, // CRITICAL: Added userId
+                                name = viewModel.className,
+                                location = viewModel.location,
+                                time = entry.time,
+                                date = "${entry.year}-${entry.month.padStart(2, '0')}-${entry.day.padStart(2, '0')}",
+                                color = viewModel.selectedColor,
+                                iconIndex = viewModel.selectedIconIndex,
+                                repeatType = entry.repeat
+                            )
+                        }
+                        if (events.isNotEmpty()) {
+                            scheduleViewModel.saveEventsToFirebase(events)
+                            onBack()
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F51B5))
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3022A6))
                 ) {
                     Text("Add Classes", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
@@ -152,21 +230,29 @@ fun AddScheduleScreen(
 }
 
 @Composable
-fun DateEntryRow(entry: DateEntry) {
+fun DateEntryRow(
+    dateText: String,
+    timeText: String,
+    repeatMode: String,
+    onDateClick: () -> Unit,
+    onTimeClick: () -> Unit,
+    onRepeatChange: (String) -> Unit
+) {
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Day", color = Color.Gray, style = MaterialTheme.typography.labelSmall)
+                Text("Date", color = Color.Gray, style = MaterialTheme.typography.labelSmall)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color(0xFFF5F5F5), RoundedCornerShape(12.dp))
+                        .clickable { onDateClick() }
                         .padding(12.dp)
                 ) {
-                    Text(entry.day)
+                    Text(dateText)
                 }
             }
             Column(modifier = Modifier.weight(1f)) {
@@ -175,10 +261,24 @@ fun DateEntryRow(entry: DateEntry) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color(0xFFF5F5F5), RoundedCornerShape(12.dp))
+                        .clickable { onTimeClick() }
                         .padding(12.dp)
                 ) {
-                    Text(entry.time)
+                    Text(timeText)
                 }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Text("Repeat", color = Color.Gray, style = MaterialTheme.typography.labelSmall)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("Never", "Daily", "Weekly").forEach { option ->
+                FilterChip(
+                    selected = repeatMode == option,
+                    onClick = { onRepeatChange(option) },
+                    label = { Text(option) }
+                )
             }
         }
     }
