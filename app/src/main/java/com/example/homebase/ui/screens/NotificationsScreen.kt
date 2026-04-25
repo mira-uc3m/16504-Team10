@@ -1,5 +1,6 @@
 package com.example.homebase.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -21,6 +23,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.homebase.data.view.NotificationViewModel
 import com.example.homebase.ui.navigation.Screen
+import com.example.homebase.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,7 +69,11 @@ fun NotificationsScreen(
                         shape = RoundedCornerShape(4.dp),
                         color = Color.White
                     ) {
-                        // Logo content
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_homebase_logo),
+                            contentDescription = "HomeBase Logo",
+                            modifier = Modifier.padding(4.dp)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
