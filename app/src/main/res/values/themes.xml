@@ -16,4 +16,9 @@
         <!-- The theme to use after the splash screen is gone -->
         <item name="postSplashScreenTheme">@style/Theme.HomeBase</item>
     </style>
+
+    <style name="CustomPickerTheme" parent="Theme.AppCompat.Light.Dialog">
+        <item name="colorAccent">#3022A6</item>
+        <item name="android:colorAccent">#3022A6</item>
+    </style>
 </resources>

@@ -1,5 +1,7 @@
 package com.example.homebase.ui.screens
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
@@ -11,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowRight
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
@@ -18,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -25,8 +29,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.homebase.R
 import com.example.homebase.data.view.ChecklistViewModel
 import com.example.homebase.data.view.ChecklistItem
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,7 +100,6 @@ fun ChecklistScreen(
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Term Selector
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -121,7 +126,6 @@ fun ChecklistScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Progress Section
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -155,7 +159,6 @@ fun ChecklistScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Checklist Items
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -177,7 +180,8 @@ fun ChecklistScreen(
                         items(categoryItems) { item ->
                             ExpandableChecklistCard(
                                 item = item,
-                                onToggle = { id, parentId -> viewModel.toggleItem(id, parentId) }
+                                onToggle = { id, parentId -> viewModel.toggleItem(id, parentId) },
+                                onSetReminder = { id, calendar -> viewModel.setReminder(id, calendar) }
                             )
                         }
                     }
@@ -200,10 +204,49 @@ fun ChecklistScreen(
 @Composable
 fun ExpandableChecklistCard(
     item: ChecklistItem,
-    onToggle: (Int, Int?) -> Unit
+    onToggle: (Int, Int?) -> Unit,
+    onSetReminder: (Int, Calendar) -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     val hasSubItems = item.subItems.isNotEmpty()
+    val context = LocalContext.current
+
+    val primaryBlue = Color(0xFF3022A6)
+
+    val showTimePicker: (Int, Calendar) -> Unit = { id, calendar ->
+        val timePickerDialog = TimePickerDialog(
+            context,
+            R.style.CustomPickerTheme,
+            { _, hour, minute ->
+                calendar.set(Calendar.HOUR_OF_DAY, hour)
+                calendar.set(Calendar.MINUTE, minute)
+                calendar.set(Calendar.SECOND, 0)
+                onSetReminder(id, calendar)
+            },
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            false
+        )
+        timePickerDialog.show()
+    }
+
+    val showDatePicker: (Int) -> Unit = { id ->
+        val calendar = Calendar.getInstance()
+        val datePickerDialog = DatePickerDialog(
+            context,
+            R.style.CustomPickerTheme,
+            { _, year, month, day ->
+                calendar.set(Calendar.YEAR, year)
+                calendar.set(Calendar.MONTH, month)
+                calendar.set(Calendar.DAY_OF_MONTH, day)
+                showTimePicker(id, calendar)
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+        datePickerDialog.show()
+    }
 
     Column {
         Surface(
@@ -214,7 +257,7 @@ fun ExpandableChecklistCard(
             color = Color(0xFFF8F9FA),
             border = androidx.compose.foundation.BorderStroke(
                 1.dp, 
-                if (item.isDone) Color(0xFF3022A6).copy(alpha = 0.5f) else Color.Transparent
+                if (item.isDone) primaryBlue.copy(alpha = 0.5f) else Color.Transparent
             )
         ) {
             Row(
@@ -224,7 +267,7 @@ fun ExpandableChecklistCard(
                 Checkbox(
                     checked = item.isDone,
                     onCheckedChange = { onToggle(item.id, null) },
-                    colors = CheckboxDefaults.colors(checkedColor = Color(0xFF3022A6))
+                    colors = CheckboxDefaults.colors(checkedColor = primaryBlue)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -235,6 +278,15 @@ fun ExpandableChecklistCard(
                     fontWeight = if (item.isDone) FontWeight.Normal else FontWeight.Medium
                 )
                 
+                IconButton(onClick = { showDatePicker(item.id) }) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = "Set Reminder",
+                        tint = if (item.reminderTime != null) primaryBlue else Color.Gray,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
                 if (hasSubItems) {
                     Icon(
                         imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
@@ -275,14 +327,23 @@ fun ExpandableChecklistCard(
                             Checkbox(
                                 checked = subItem.isDone,
                                 onCheckedChange = { onToggle(subItem.id, item.id) },
-                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF3022A6))
+                                colors = CheckboxDefaults.colors(checkedColor = primaryBlue)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = subItem.title,
+                                modifier = Modifier.weight(1f),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = if (subItem.isDone) Color.Gray else Color(0xFF333333)
                             )
+                            IconButton(onClick = { showDatePicker(subItem.id) }) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarMonth,
+                                    contentDescription = "Set Reminder",
+                                    tint = if (subItem.reminderTime != null) primaryBlue else Color.Gray,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
                 }
