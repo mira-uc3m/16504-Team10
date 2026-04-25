@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +35,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import kotlin.math.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("MissingPermission")
 @Composable
 fun MapScreen(
@@ -136,100 +138,119 @@ fun MapScreen(
         )
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
-        MapHeader(navController, selectedCampus) { selectedCampus = it }
-
-        Box(modifier = Modifier.weight(1f)) {
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState,
-                uiSettings = MapUiSettings(zoomControlsEnabled = false),
-                properties = MapProperties(isMyLocationEnabled = settingsViewModel.locationTrackingEnabled && hasLocationPermission)
-            ) {
-                val currentBuildings = if (selectedCampus == "Leganes")
-                    CampusData.leganesBuildings else CampusData.getafeBuildings
-
-                currentBuildings.forEach { building ->
-                    Marker(
-                        state = MarkerState(position = building.position),
-                        title = building.name
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "Campus Map",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        fontSize = 20.sp
                     )
-                }
-
-                // If location is enabled, we show a marker for the user as well (or use isMyLocationEnabled)
-                if (settingsViewModel.locationTrackingEnabled && hasLocationPermission) {
-                    Marker(
-                        state = MarkerState(position = userLocation),
-                        title = "You are here",
-                        icon = com.google.android.gms.maps.model.BitmapDescriptorFactory.defaultMarker(
-                            com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_AZURE
-                        )
-                    )
-                }
-            }
-
-            // Location FAB
-            FloatingActionButton(
-                onClick = {
-                    if (!hasLocationPermission) {
-                        permissionLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                            )
-                        )
-                    } else if (!settingsViewModel.locationTrackingEnabled) {
-                        showEnableLocationDialog = true
-                    } else {
-                        cameraPositionState.move(
-                            com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(userLocation, 17f)
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            contentDescription = "Back",
+                            tint = Color.White
                         )
                     }
                 },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                containerColor = Color.White,
-                contentColor = Color(0xFF3F51B5)
-            ) {
-                Icon(Icons.Default.MyLocation, contentDescription = "My Location")
-            }
-        }
-
-        BuildingListSection(selectedCampus, settingsViewModel.locationTrackingEnabled && hasLocationPermission, userLocation)
-    }
-}
-
-@Composable
-fun MapHeader(navController: NavHostController, selected: String, onToggle: (String) -> Unit) {
-    Column(modifier = Modifier.padding(top = 48.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.Default.KeyboardArrowLeft, contentDescription = "Back")
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                "Campus Map",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color(0xFF3022A6)
+                )
             )
-        }
+        },
+        containerColor = Color.White
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .background(Color.White)
+        ) {
+            // Campus Toggles
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                CampusToggleButton(
+                    label = "Leganes",
+                    isSelected = selectedCampus == "Leganes",
+                    modifier = Modifier.weight(1f)
+                ) { selectedCampus = "Leganes" }
 
-        Spacer(modifier = Modifier.height(16.dp))
+                CampusToggleButton(
+                    label = "Getafe",
+                    isSelected = selectedCampus == "Getafe",
+                    modifier = Modifier.weight(1f)
+                ) { selectedCampus = "Getafe" }
+            }
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            CampusToggleButton(
-                label = "Leganes",
-                isSelected = selected == "Leganes",
-                modifier = Modifier.weight(1f)
-            ) { onToggle("Leganes") }
+            Box(modifier = Modifier.weight(0.6f)) {
+                GoogleMap(
+                    modifier = Modifier.fillMaxSize(),
+                    cameraPositionState = cameraPositionState,
+                    uiSettings = MapUiSettings(zoomControlsEnabled = false),
+                    properties = MapProperties(isMyLocationEnabled = settingsViewModel.locationTrackingEnabled && hasLocationPermission)
+                ) {
+                    val currentBuildings = if (selectedCampus == "Leganes")
+                        CampusData.leganesBuildings else CampusData.getafeBuildings
 
-            CampusToggleButton(
-                label = "Getafe",
-                isSelected = selected == "Getafe",
-                modifier = Modifier.weight(1f)
-            ) { onToggle("Getafe") }
+                    currentBuildings.forEach { building ->
+                        Marker(
+                            state = MarkerState(position = building.position),
+                            title = building.name
+                        )
+                    }
+
+                    if (settingsViewModel.locationTrackingEnabled && hasLocationPermission) {
+                        Marker(
+                            state = MarkerState(position = userLocation),
+                            title = "You are here",
+                            icon = com.google.android.gms.maps.model.BitmapDescriptorFactory.defaultMarker(
+                                com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_AZURE
+                            )
+                        )
+                    }
+                }
+
+                // Location FAB
+                FloatingActionButton(
+                    onClick = {
+                        if (!hasLocationPermission) {
+                            permissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        } else if (!settingsViewModel.locationTrackingEnabled) {
+                            showEnableLocationDialog = true
+                        } else {
+                            cameraPositionState.move(
+                                com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(userLocation, 17f)
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp),
+                    containerColor = Color.White,
+                    contentColor = Color(0xFF3F51B5)
+                ) {
+                    Icon(Icons.Default.MyLocation, contentDescription = "My Location")
+                }
+            }
+
+            // Scrollable Building List Section
+            Box(modifier = Modifier.weight(0.4f)) {
+                BuildingListSection(selectedCampus, settingsViewModel.locationTrackingEnabled && hasLocationPermission, userLocation)
+            }
         }
     }
 }
@@ -250,7 +271,7 @@ fun CampusToggleButton(label: String, isSelected: Boolean, modifier: Modifier, o
 
 @Composable
 fun BuildingListSection(campus: String, locationEnabled: Boolean, userPos: LatLng) {
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column(modifier = Modifier.padding(16.dp).fillMaxSize()) {
         OutlinedTextField(
             value = "",
             onValueChange = {},
@@ -266,7 +287,7 @@ fun BuildingListSection(campus: String, locationEnabled: Boolean, userPos: LatLn
 
         val buildings = if (campus == "Leganes") CampusData.leganesBuildings else CampusData.getafeBuildings
 
-        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+        LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
             items(buildings) { building ->
                 val distanceText = if (locationEnabled) {
                     calculateDistance(userPos, building.position)
