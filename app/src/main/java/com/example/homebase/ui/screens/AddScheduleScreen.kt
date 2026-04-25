@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,44 +24,60 @@ import com.example.homebase.data.view.AddScheduleViewModel
 import com.example.homebase.data.view.ScheduleViewModel
 import com.example.homebase.data.model.DateEntry
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddScheduleScreen(
     onBack: () -> Unit,
     scheduleViewModel: ScheduleViewModel,
     viewModel: AddScheduleViewModel = viewModel()
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .padding(16.dp)
-    ) {
-        // Header
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { onBack() }) {
-                Icon(Icons.Default.KeyboardArrowLeft, contentDescription = "Back")
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Add Schedule", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "Add Schedule",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        fontSize = 20.sp
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { onBack() }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color(0xFF3022A6)
+                )
+            )
+        },
+        containerColor = Color.White
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
             item {
                 Text("Subject Name", color = Color.Gray, style = MaterialTheme.typography.labelLarge)
                 OutlinedTextField(
                     value = viewModel.className,
                     onValueChange = { viewModel.className = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search location...") },
+                    placeholder = { Text("Subject name...") },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color(0xFFF5F5F5))
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Label & Icon", color = Color.Gray, style = MaterialTheme.typography.labelLarge)
+                Text("Label & Color", color = Color.Gray, style = MaterialTheme.typography.labelLarge)
                 
                 // Color Picker
                 Row(Modifier.padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -89,6 +106,8 @@ fun AddScheduleScreen(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Text("Location", color = Color.Gray, style = MaterialTheme.typography.labelLarge)
                 OutlinedTextField(
