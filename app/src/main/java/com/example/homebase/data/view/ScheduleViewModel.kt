@@ -14,6 +14,7 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.DayOfWeek
 import java.time.temporal.TemporalAdjusters
 
 class ScheduleViewModel(
@@ -41,8 +42,9 @@ class ScheduleViewModel(
     }
 
     private fun addMockData() {
-        val today = LocalDate.now()
-        val monday = today.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
+        // Set start dates to early 2025 so they show up for all weeks
+        val startDate = LocalDate.of(2025, 1, 1)
+        val monday = startDate.with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY))
         val tuesday = monday.plusDays(1)
         val wednesday = monday.plusDays(2)
         val thursday = monday.plusDays(3)

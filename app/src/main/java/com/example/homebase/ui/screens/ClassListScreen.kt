@@ -16,9 +16,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.homebase.data.model.ScheduleEvent
 import com.example.homebase.data.view.ScheduleViewModel
@@ -31,8 +31,13 @@ import java.time.temporal.TemporalAdjusters
 @Composable
 fun ClassListScreen(
     navController: NavHostController,
-    viewModel: ScheduleViewModel = viewModel()
+    viewModel: ScheduleViewModel
 ) {
+    // Ensure we have latest data on every view
+    LaunchedEffect(Unit) {
+        viewModel.fetchScheduleFromFirebase()
+    }
+
     var currentMonday by remember {
         mutableStateOf(LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)))
     }
@@ -92,7 +97,7 @@ fun ClassListScreen(
                     }
                     
                     Text(
-                        text = "${currentMonday.format(weekRangeFormatter)} - ${currentMonday.plusDays(4).format(weekRangeFormatter)}",
+                        text = "${currentMonday.format(weekRangeFormatter)} - ${currentMonday.plusDays(4).format(weekRangeFormatter)}, ${currentMonday.year}",
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF3022A6),
                         fontSize = 16.sp
@@ -107,48 +112,71 @@ fun ClassListScreen(
         },
         containerColor = Color(0xFFE8F1F2)
     ) { paddingValues ->
+        // Direct subscription to allActivities state
+        val allWeeklyClasses = daysOfWeek.flatMap { date ->
+            viewModel.allActivities.filter { viewModel.isEventOnDate(it, date) }
+        }
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 20.dp)
         ) {
-            daysOfWeek.forEach { date ->
-                // Use the ViewModel's check to get real classes for each date
-                val dayClasses = viewModel.allActivities.filter { viewModel.isEventOnDate(it, date) }
-                
-                if (isWithinSemester(date) && dayClasses.isNotEmpty()) {
-                    item {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = date.format(headerFormatter),
-                            color = Color.Gray,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-                    items(dayClasses) { event ->
-                        ClassRow(event) {
-                            navController.navigate("schedule_screen")
-                        }
-                        HorizontalDivider(
-                            thickness = 0.5.dp,
-                            color = Color.Gray.copy(alpha = 0.1f)
-                        )
-                    }
-                } else if (date.dayOfWeek != DayOfWeek.SATURDAY && date.dayOfWeek != DayOfWeek.SUNDAY && !isWithinSemester(date)) {
-                    item {
-                        if (date == currentMonday) {
-                            Box(modifier = Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
-                                Text("No classes scheduled after May 30", color = Color.Gray)
-                            }
+            if (allWeeklyClasses.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillParentMaxSize()
+                            .padding(bottom = 100.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Default.EventBusy,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = Color.LightGray
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = if (!isWithinSemester(currentMonday)) "Semester ended May 30" else "No classes scheduled for this week",
+                                color = Color.Gray,
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
                 }
-            }
-            item {
-                Spacer(modifier = Modifier.height(40.dp))
+            } else {
+                daysOfWeek.forEach { date ->
+                    val dayClasses = viewModel.allActivities.filter { viewModel.isEventOnDate(it, date) }
+                    
+                    if (dayClasses.isNotEmpty()) {
+                        item {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Text(
+                                text = date.format(headerFormatter),
+                                color = Color.Gray,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+                        items(dayClasses, key = { it.id + date.toString() }) { event ->
+                            ClassRow(event) {
+                                viewModel.selectedDate = date
+                                navController.navigate("schedule_screen")
+                            }
+                            HorizontalDivider(
+                                thickness = 0.5.dp,
+                                color = Color.Gray.copy(alpha = 0.1f)
+                            )
+                        }
+                    }
+                }
+                item {
+                    Spacer(modifier = Modifier.height(40.dp))
+                }
             }
         }
     }
