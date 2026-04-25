@@ -16,15 +16,19 @@ object CampusData {
     val getafePos = LatLng(40.3045, -3.7258)
 
     val leganesBuildings = listOf(
-        CampusBuilding("Building 7 - Juan Benet", "50 m", LatLng(40.3325, -3.7658)),
-        CampusBuilding("Bank Secaucus", "1,2 km", LatLng(40.3330, -3.7640)),
-        CampusBuilding("Bank 1657 Riverside Drive", "5,3 km", LatLng(40.3310, -3.7680)),
-        CampusBuilding("Bank Rutherford", "70 m", LatLng(40.3320, -3.7650))
+        CampusBuilding("Edificio 1 (Sabatini)", "50 m", LatLng(40.3331, -3.7653)),
+        CampusBuilding("Edificio 2 (Betancourt)", "120 m", LatLng(40.3327, -3.7648)),
+        CampusBuilding("Edificio 4 (Agustín de Betancourt)", "80 m", LatLng(40.3321, -3.7654)),
+        CampusBuilding("Edificio 7 (Juan Benet)", "70 m", LatLng(40.3324, -3.7667)),
+        CampusBuilding("Edificio 10 (Juan de la Cierva)", "150 m", LatLng(40.3322, -3.7674)),
+        CampusBuilding("Biblioteca Rey Pastor", "100 m", LatLng(40.3328, -3.7656))
     )
 
     val getafeBuildings = listOf(
-        CampusBuilding("Library - Getafe", "100 m", LatLng(40.3048, -3.7250)),
-        CampusBuilding("Building 15 - Lopez Aranguren", "200 m", LatLng(40.3040, -3.7260)),
-        CampusBuilding("Student Center", "350 m", LatLng(40.3035, -3.7270))
+        CampusBuilding("Edificio 1 (Concepción Arenal)", "100 m", LatLng(40.3042, -3.7248)),
+        CampusBuilding("Edificio 10 (Carmen Martín Gaite)", "250 m", LatLng(40.3033, -3.7266)),
+        CampusBuilding("Edificio 15 (López Aranguren)", "200 m", LatLng(40.3038, -3.7259)),
+        CampusBuilding("Edificio 18 (Ortega y Gasset)", "180 m", LatLng(40.3051, -3.7255)),
+        CampusBuilding("Biblioteca de Ciencias Sociales", "120 m", LatLng(40.3048, -3.7250))
     )
 }

@@ -16,9 +16,7 @@ val mapsApiKey = localProperties.getProperty("MAPS_API_KEY") ?: ""
 
 android {
     namespace = "com.example.homebase"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.homebase"
@@ -83,6 +81,8 @@ dependencies {
     implementation("com.google.maps.android:maps-compose:4.4.1")
     // Google Maps SDK
     implementation("com.google.android.gms:play-services-maps:19.0.0")
+    // Fix: Explicitly use string dependency to avoid version catalog issues
+    implementation("com.google.android.gms:play-services-location:21.0.1")
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:34.11.0"))

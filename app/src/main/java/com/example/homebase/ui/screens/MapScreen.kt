@@ -2,6 +2,8 @@ package com.example.homebase.ui.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.location.Location
+import android.os.Looper
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,31 +17,86 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavHostController
 import com.example.homebase.data.model.CampusData
+import com.example.homebase.data.model.CampusBuilding
+import com.google.android.gms.location.*
 import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
+import kotlin.math.*
 
 @Composable
 fun MapScreen(navController: NavHostController) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     var selectedCampus by remember { mutableStateOf("Leganes") }
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    var userLocation by remember { mutableStateOf<Location?>(null) }
     
-    // Check if location permission is granted
-    val hasLocationPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        )
+    // Permission state that refreshes when screen is resumed
+    var hasLocationPermission by remember { mutableStateOf(false) }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasLocationPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                                       ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // Request active location updates to ensure real-time tracking works
+    DisposableEffect(hasLocationPermission) {
+        if (hasLocationPermission) {
+            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000L)
+                .setMinUpdateIntervalMillis(2000L)
+                .build()
+                
+            val locationCallback = object : LocationCallback() {
+                override fun onLocationResult(result: LocationResult) {
+                    userLocation = result.lastLocation
+                }
+            }
+            
+            try {
+                fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+            } catch (e: SecurityException) {}
+            
+            onDispose {
+                fusedLocationClient.removeLocationUpdates(locationCallback)
+            }
+        } else {
+            onDispose {}
+        }
     }
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(CampusData.leganesPos, 15f)
+        position = CameraPosition.fromLatLngZoom(CampusData.leganesPos, 16f)
+    }
+
+    // Initial centering on user when detected
+    var hasCenteredOnUser by remember { mutableStateOf(false) }
+    LaunchedEffect(userLocation) {
+        if (userLocation != null && !hasCenteredOnUser) {
+            val userLatLng = LatLng(userLocation!!.latitude, userLocation!!.longitude)
+            cameraPositionState.animate(
+                com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(userLatLng, 16f)
+            )
+            hasCenteredOnUser = true
+        }
     }
 
     LaunchedEffect(selectedCampus) {
+        // Only move camera if user location hasn't been set yet or if user manually toggles campus
         val targetPos = if (selectedCampus == "Leganes") CampusData.leganesPos else CampusData.getafePos
         cameraPositionState.animate(
             com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(targetPos, 16f)
@@ -73,7 +130,7 @@ fun MapScreen(navController: NavHostController) {
             }
         }
 
-        BuildingListSection(selectedCampus)
+        BuildingListSection(selectedCampus, userLocation)
     }
 }
 
@@ -97,7 +154,7 @@ fun MapHeader(navController: NavHostController, selected: String, onToggle: (Str
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            CampusToggleButton(
+             CampusToggleButton(
                 label = "Leganes",
                 isSelected = selected == "Leganes",
                 modifier = Modifier.weight(1f)
@@ -127,7 +184,7 @@ fun CampusToggleButton(label: String, isSelected: Boolean, modifier: Modifier, o
 }
 
 @Composable
-fun BuildingListSection(campus: String) {
+fun BuildingListSection(campus: String, userLocation: Location?) {
     Column(modifier = Modifier.padding(16.dp)) {
         OutlinedTextField(
             value = "",
@@ -146,6 +203,12 @@ fun BuildingListSection(campus: String) {
 
         LazyColumn(modifier = Modifier.fillMaxWidth().height(200.dp)) {
             items(buildings) { building ->
+                val calculatedDistance = if (userLocation != null) {
+                    calculateDistance(userLocation.latitude, userLocation.longitude, building.position.latitude, building.position.longitude)
+                } else {
+                    building.distance 
+                }
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -165,7 +228,7 @@ fun BuildingListSection(campus: String) {
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        building.distance,
+                        calculatedDistance,
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray
                     )
@@ -173,5 +236,22 @@ fun BuildingListSection(campus: String) {
                 HorizontalDivider(color = Color(0xFFEEEEEE))
             }
         }
+    }
+}
+
+fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): String {
+    val r = 6371
+    val dLat = Math.toRadians(lat2 - lat1)
+    val dLon = Math.toRadians(lon2 - lon1)
+    val a = sin(dLat / 2) * sin(dLat / 2) +
+            cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+            sin(dLon / 2) * sin(dLon / 2)
+    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    val distance = r * c
+
+    return if (distance < 1) {
+        "${(distance * 1000).roundToInt()} m"
+    } else {
+        "${"%.1f".format(distance)} km"
     }
 }
