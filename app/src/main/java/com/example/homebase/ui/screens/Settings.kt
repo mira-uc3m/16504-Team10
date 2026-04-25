@@ -1,19 +1,21 @@
 package com.example.homebase.ui.screens
 
 import android.Manifest
-import android.os.Build
+import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,25 +24,34 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
-import com.example.homebase.NotificationHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavHostController) {
     val context = LocalContext.current
-    val notificationHelper = remember { NotificationHelper(context) }
+    
+    var selectedTab by remember { mutableStateOf(0) }
+    val tabs = listOf("Language & Region", "Notifications", "Location")
     
     var pushNotifications by remember { mutableStateOf(true) }
     var classReminders by remember { mutableStateOf(false) }
     var checklistReminders by remember { mutableStateOf(true) }
-    var locationTracking by remember { mutableStateOf(false) }
 
-    // Launcher for notification permission
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        pushNotifications = isGranted
+    fun hasLocPermission() = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    var locationTracking by remember { mutableStateOf(hasLocPermission()) }
+
+    // Launcher for location permission
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        locationTracking = granted
+        if (granted) {
+            Toast.makeText(context, "Location Services Activated", Toast.LENGTH_SHORT).show()
+        }
     }
 
     Scaffold(
@@ -58,60 +69,92 @@ fun SettingsScreen(navController: NavHostController) {
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color(0xFF3629B7)
+                    containerColor = Color(0xFF3022A6)
                 )
             )
-        }
+        },
+        containerColor = Color(0xFF3022A6)
     ) { paddingValues ->
-        Column(
+        Surface(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color.White)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+                .fillMaxSize(),
+            color = Color.White,
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
         ) {
-            Text(
-                "Language & Region",
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp)
+            ) {
+                // Tab Row to match Figma Screenshot
+                ScrollableTabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = Color.Transparent,
+                    contentColor = Color(0xFF3022A6),
+                    edgePadding = 0.dp,
+                    divider = {},
+                    indicator = { tabPositions ->
+                        SecondaryIndicator(
+                            Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                            color = Color(0xFF3022A6)
+                        )
+                    }
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = { 
+                                Text(
+                                    title, 
+                                    fontSize = 13.sp, 
+                                    fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (selectedTab == index) Color(0xFF3022A6) else Color.Gray
+                                ) 
+                            }
+                        )
+                    }
+                }
 
-            SettingsDropdownItem(label = "Region", value = "Canada 🇨🇦")
-            SettingsDropdownItem(label = "Language", value = "English")
-            SettingsDropdownItem(label = "Preferred Currency", value = "CAD")
-
-            Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                "Notifications",
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            SettingsSwitchItem("Allow Push Notifications", pushNotifications) { checked ->
-                if (checked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                } else {
-                    pushNotifications = checked
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(vertical = 20.dp)
+                ) {
+                    when (selectedTab) {
+                        0 -> { // Language & Region
+                            Text("Language & Region", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            SettingsDropdownItem(label = "Region", value = "Canada 🇨🇦")
+                            SettingsDropdownItem(label = "Language", value = "English")
+                            SettingsDropdownItem(label = "Preferred Currency", value = "CAD")
+                        }
+                        1 -> { // Notifications
+                            Text("Notifications", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            SettingsSwitchItem("Allow Push Notifications", pushNotifications) { pushNotifications = it }
+                            SettingsSwitchItem("Class Reminders", classReminders) { classReminders = it }
+                            SettingsSwitchItem("Checklist Reminders", checklistReminders) { checklistReminders = it }
+                        }
+                        2 -> { // Location
+                            Text("Location & Map Preferences", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            SettingsSwitchItem("Enable location tracking", locationTracking) { checked ->
+                                if (checked) {
+                                    locationPermissionLauncher.launch(
+                                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+                                    )
+                                } else {
+                                    locationTracking = false
+                                    Toast.makeText(context, "Location tracking disabled", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    }
                 }
             }
-            SettingsSwitchItem("Class Reminders", classReminders) { classReminders = it }
-            SettingsSwitchItem("Checklist Reminders", checklistReminders) { checklistReminders = it }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                "Location & Map Preferences",
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            SettingsSwitchItem("Enable location tracking", locationTracking) { locationTracking = it }
         }
     }
 }
@@ -122,17 +165,17 @@ fun SettingsDropdownItem(label: String, value: String) {
         Text(label, fontSize = 12.sp, color = Color.Gray)
         Card(
             modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            shape = RoundedCornerShape(8.dp),
-            border = BorderStroke(1.dp, Color.LightGray)
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, Color(0xFFEEEEEE))
         ) {
             Row(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(value, color = Color.Black)
-                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color(0xFF3629B7))
+                Text(value, color = Color.Black, fontSize = 15.sp)
+                Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color(0xFF3022A6))
             }
         }
     }
@@ -141,17 +184,20 @@ fun SettingsDropdownItem(label: String, value: String) {
 @Composable
 fun SettingsSwitchItem(label: String, checked: Boolean, onToggle: (Boolean) -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label, color = Color.Black)
+        Text(label, color = Color(0xFF333333), fontSize = 15.sp, fontWeight = FontWeight.Medium)
         Switch(
             checked = checked,
             onCheckedChange = onToggle,
             colors = SwitchDefaults.colors(
-                checkedTrackColor = Color(0xFF3629B7),
-                checkedThumbColor = Color.White
+                checkedTrackColor = Color(0xFF3022A6),
+                checkedThumbColor = Color.White,
+                uncheckedTrackColor = Color(0xFFE0E0E0),
+                uncheckedThumbColor = Color.White,
+                uncheckedBorderColor = Color.Transparent
             )
         )
     }

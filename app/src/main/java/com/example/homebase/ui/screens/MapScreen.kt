@@ -1,5 +1,7 @@
 package com.example.homebase.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,24 +14,31 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import com.example.homebase.data.model.CampusData
-import com.example.homebase.data.model.CampusBuilding
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.maps.android.compose.*
 
 @Composable
 fun MapScreen(navController: NavHostController) {
-    // State to track which campus is selected: "Leganes" or "Getafe"
+    val context = LocalContext.current
     var selectedCampus by remember { mutableStateOf("Leganes") }
+    
+    // Check if location permission is granted
+    val hasLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        )
+    }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(CampusData.leganesPos, 15f)
     }
 
-    // Automatically move map camera when the toggle is clicked
     LaunchedEffect(selectedCampus) {
         val targetPos = if (selectedCampus == "Leganes") CampusData.leganesPos else CampusData.getafePos
         cameraPositionState.animate(
@@ -38,17 +47,20 @@ fun MapScreen(navController: NavHostController) {
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
-        // 1. Navigation Header and Campus Toggles
         MapHeader(navController, selectedCampus) { selectedCampus = it }
 
-        // 2. Interactive Map Section
         Box(modifier = Modifier.weight(1f)) {
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
-                uiSettings = MapUiSettings(zoomControlsEnabled = false)
+                uiSettings = MapUiSettings(
+                    zoomControlsEnabled = false,
+                    myLocationButtonEnabled = hasLocationPermission
+                ),
+                properties = MapProperties(
+                    isMyLocationEnabled = hasLocationPermission
+                )
             ) {
-                // Display markers based on selected campus
                 val currentBuildings = if (selectedCampus == "Leganes")
                     CampusData.leganesBuildings else CampusData.getafeBuildings
 
@@ -61,7 +73,6 @@ fun MapScreen(navController: NavHostController) {
             }
         }
 
-        // 3. Search Bar and Building List (Bottom Section)
         BuildingListSection(selectedCampus)
     }
 }
@@ -108,7 +119,7 @@ fun CampusToggleButton(label: String, isSelected: Boolean, modifier: Modifier, o
         modifier = modifier.height(56.dp),
         shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) Color(0xFF3F51B5) else Color(0xFFBDBDBD)
+            containerColor = if (isSelected) Color(0xFF3022A6) else Color(0xFFBDBDBD)
         )
     ) {
         Text(label, color = Color.White, fontWeight = FontWeight.Bold)
@@ -118,7 +129,6 @@ fun CampusToggleButton(label: String, isSelected: Boolean, modifier: Modifier, o
 @Composable
 fun BuildingListSection(campus: String) {
     Column(modifier = Modifier.padding(16.dp)) {
-        // Search bar as seen in mockup
         OutlinedTextField(
             value = "",
             onValueChange = {},
@@ -134,7 +144,7 @@ fun BuildingListSection(campus: String) {
 
         val buildings = if (campus == "Leganes") CampusData.leganesBuildings else CampusData.getafeBuildings
 
-        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+        LazyColumn(modifier = Modifier.fillMaxWidth().height(200.dp)) {
             items(buildings) { building ->
                 Row(
                     modifier = Modifier
@@ -145,7 +155,7 @@ fun BuildingListSection(campus: String) {
                     Icon(
                         Icons.Default.LocationOn,
                         contentDescription = null,
-                        tint = Color(0xFF3F51B5),
+                        tint = Color(0xFF3022A6),
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(16.dp))
