@@ -1,5 +1,24 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.HomeBase" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Main theme colors -->
+        <item name="colorPrimary">#3022A6</item>
+    </style>
 
-    <style name="Theme.HomeBase" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Splash Screen theme -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <!-- Center icon: The white square with blue house -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_homebase_splash_logo</item>
+        <!-- Background color: Dark blue -->
+        <item name="windowSplashScreenBackground">#3022A6</item>
+        <!-- Set the duration of the splash screen -->
+        <item name="windowSplashScreenAnimationDuration">200</item>
+        <!-- The theme to use after the splash screen is gone -->
+        <item name="postSplashScreenTheme">@style/Theme.HomeBase</item>
+    </style>
+
+    <style name="CustomPickerTheme" parent="Theme.AppCompat.Light.Dialog">
+        <item name="colorAccent">#3022A6</item>
+        <item name="android:colorAccent">#3022A6</item>
+    </style>
 </resources>

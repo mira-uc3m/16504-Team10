@@ -9,7 +9,7 @@ import com.example.homebase.data.model.DateEntry
 class AddScheduleViewModel : ViewModel() {
     var className by mutableStateOf("")
     var location by mutableStateOf("")
-    var selectedColor by mutableStateOf(0xFF332CA4)
+    var selectedColor by mutableStateOf(0xFF332CA4L)
     var selectedIconIndex by mutableStateOf(0)
 
     val icons = listOf(

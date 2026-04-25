@@ -40,6 +40,16 @@ class NotificationViewModel(
         }
     }
 
+    fun dismissNotification(notificationId: String) {
+        viewModelScope.launch {
+            // Optimistically update UI
+            _notifications.value = _notifications.value.filter { it.id != notificationId }
+            
+            // Delete from repository (Firebase) using the direct notification ID
+            repository.deleteNotificationById(notificationId)
+        }
+    }
+
     private fun startStatusUpdateTimer() {
         viewModelScope.launch {
             while (true) {

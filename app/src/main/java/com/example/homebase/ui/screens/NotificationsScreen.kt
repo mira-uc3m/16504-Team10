@@ -1,5 +1,7 @@
 package com.example.homebase.ui.screens
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -21,6 +24,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.homebase.data.view.NotificationViewModel
 import com.example.homebase.ui.navigation.Screen
+import com.example.homebase.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,7 +70,11 @@ fun NotificationsScreen(
                         shape = RoundedCornerShape(4.dp),
                         color = Color.White
                     ) {
-                        // Logo content
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_homebase_logo),
+                            contentDescription = "HomeBase Logo",
+                            modifier = Modifier.padding(4.dp)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -134,12 +142,13 @@ fun NotificationsScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(notifications) { notification ->
+                        items(notifications, key = { it.id }) { notification ->
                             NotificationItem(
                                 title = notification.title,
                                 time = notification.time,
                                 status = notification.status,
-                                room = notification.room
+                                room = notification.room,
+                                onDismiss = { viewModel.dismissNotification(notification.id) }
                             )
                         }
                     }
@@ -150,7 +159,13 @@ fun NotificationsScreen(
 }
 
 @Composable
-fun NotificationItem(title: String, time: String, status: String, room: String) {
+fun NotificationItem(
+    title: String,
+    time: String,
+    status: String,
+    room: String,
+    onDismiss: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FF)),
@@ -176,12 +191,17 @@ fun NotificationItem(title: String, time: String, status: String, room: String) 
                         color = Color.Gray
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Dismiss",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Dismiss",
+                            tint = Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
             

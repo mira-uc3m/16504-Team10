@@ -1,0 +1,15 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- The white house silhouette for the splash screen -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,98 L74,45 L96,64 L96,98 Z" />
+
+    <!-- The window panes (transparent/cutout) -->
+    <path
+        android:fillColor="#3022A6"
+        android:pathData="M76,75 h8 v8 h-8 z M86,75 h8 v8 h-8 z M76,85 h8 v8 h-8 z M86,85 h8 v8 h-8 z" />
+</vector>

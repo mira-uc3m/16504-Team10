@@ -1,5 +1,6 @@
 package com.example.homebase.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,9 +26,9 @@ import com.example.homebase.data.view.ScheduleViewModel
 import com.example.homebase.data.view.NotificationViewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import com.example.homebase.data.model.ScheduleEvent
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.homebase.R
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -84,7 +86,11 @@ fun HomeScreen(
                         shape = RoundedCornerShape(4.dp),
                         color = Color.White
                     ) {
-                        // Logo content could go here
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_homebase_logo),
+                            contentDescription = "HomeBase Logo",
+                            modifier = Modifier.padding(4.dp)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -99,14 +105,26 @@ fun HomeScreen(
             ) {
                 val navItems = listOf(Screen.Home, Screen.Settings)
                 navItems.forEach { screen ->
-                    val isSelected = screen == Screen.Home
+                    val isSelected = (screen == Screen.Home)
                     NavigationBarItem(
                         icon = { Icon(screen.icon, contentDescription = screen.title) },
                         label = { Text(screen.title) },
                         selected = isSelected,
                         onClick = {
                             if (!isSelected) {
-                                navController.navigate(screen.route)
+                                navController.navigate(screen.route) {
+                                    // Pop up to the start destination of the graph to
+                                    // avoid building up a large stack of destinations
+                                    // on the back stack as users select items
+                                    popUpTo(Screen.Home.route) {
+                                        saveState = true
+                                    }
+                                    // Avoid multiple copies of the same destination when
+                                    // reselecting the same item
+                                    launchSingleTop = true
+                                    // Restore state when reselecting a previously selected item
+                                    restoreState = true
+                                }
                             }
                         },
                         colors = NavigationBarItemDefaults.colors(
@@ -137,12 +155,27 @@ fun HomeScreen(
             ) {
                 // Today's Classes Section (Scrollable)
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Today's Classes",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = Color.Gray,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Today's Classes",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "See All",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color(0xFF3022A6),
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable {
+                                navController.navigate(Screen.ClassList.route)
+                            }
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -178,7 +211,9 @@ fun HomeScreen(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             items(todayClasses) { event ->
-                                RealClassListItem(event)
+                                RealClassListItem(event) {
+                                    navController.navigate(Screen.ClassList.route)
+                                }
                             }
                         }
                     }
@@ -191,9 +226,9 @@ fun HomeScreen(
                     Triple("Currency\nConversion", Icons.Default.AccountBalanceWallet, "currency_screen"),
                     Triple("Campus\nMap", Icons.Default.LocationOn, "map"),
                     Triple("My\nSchedule", Icons.Default.DateRange, "schedule_screen"),
-                    Triple("Exchange\nChecklist", Icons.Default.FormatListBulleted, "checklist_screen"),
-                    Triple("Class\nList", Icons.Default.ListAlt, "classlist_screen"),
-                    Triple("Quick\nLinks", Icons.Default.Link, "links_screen")
+                    Triple("Exchange\nChecklist", Icons.Default.FormatListBulleted, Screen.Checklist.route),
+                    Triple("Class\nList", Icons.Default.ListAlt, Screen.ClassList.route),
+                    Triple("Quick\nLinks", Icons.Default.Link, Screen.QuickLinks.route)
                 )
 
                 LazyVerticalGrid(
@@ -216,7 +251,7 @@ fun HomeScreen(
 }
 
 @Composable
-fun RealClassListItem(event: ScheduleEvent) {
+fun RealClassListItem(event: ScheduleEvent, onClick: () -> Unit = {}) {
     val icons = listOf(
         Icons.Default.Stars,
         Icons.Default.Thunderstorm,
@@ -227,7 +262,7 @@ fun RealClassListItem(event: ScheduleEvent) {
     )
     val displayIcon = icons.getOrElse(event.iconIndex) { Icons.Default.School }
 
-    Column {
+    Column(modifier = Modifier.clickable { onClick() }) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

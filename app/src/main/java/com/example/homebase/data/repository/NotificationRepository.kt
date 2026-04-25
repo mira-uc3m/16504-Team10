@@ -46,15 +46,18 @@ class NotificationRepository {
         }
     }
 
-    suspend fun deleteNotificationByEventId(eventId: String): Boolean {
+    suspend fun deleteNotificationById(notificationId: String): Boolean {
         return try {
-            val notificationId = "notif_$eventId"
             notificationsCollection.document(notificationId).delete().await()
             true
         } catch (e: Exception) {
             Log.e("NotificationRepository", "Error deleting notification: ${e.message}")
             false
         }
+    }
+
+    suspend fun deleteNotificationByEventId(eventId: String): Boolean {
+        return deleteNotificationById("notif_$eventId")
     }
 
     fun createNotificationFromEvent(event: ScheduleEvent, userId: String): Notification? {
