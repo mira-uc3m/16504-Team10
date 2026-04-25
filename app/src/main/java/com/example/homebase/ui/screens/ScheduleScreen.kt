@@ -260,8 +260,8 @@ fun CalendarSection(viewModel: ScheduleViewModel) {
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(7),
-                modifier = Modifier.height(220.dp).padding(top = 8.dp),
-                userScrollEnabled = false
+                modifier = Modifier.height(260.dp).padding(top = 8.dp),
+                userScrollEnabled = true
             ) {
                 items(firstDayOfWeekIndex) { Spacer(modifier = Modifier.size(32.dp)) }
 
