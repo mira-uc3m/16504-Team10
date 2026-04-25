@@ -25,19 +25,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.homebase.data.view.SettingsViewModel
+import com.example.homebase.data.view.AuthViewModel
+import com.example.homebase.ui.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(navController: NavHostController) {
+fun SettingsScreen(
+    navController: NavHostController,
+    viewModel: SettingsViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
+) {
     val context = LocalContext.current
     
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("Language & Region", "Notifications", "Location")
-    
-    var pushNotifications by remember { mutableStateOf(true) }
-    var classReminders by remember { mutableStateOf(false) }
-    var checklistReminders by remember { mutableStateOf(true) }
 
     fun hasLocPermission() = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
     var locationTracking by remember { mutableStateOf(hasLocPermission()) }
@@ -73,6 +77,34 @@ fun SettingsScreen(navController: NavHostController) {
                 )
             )
         },
+        bottomBar = {
+            NavigationBar(
+                containerColor = Color.White,
+                tonalElevation = 8.dp
+            ) {
+                val navItems = listOf(Screen.Home, Screen.Settings)
+                navItems.forEach { screen ->
+                    val isSelected = screen == Screen.Settings
+                    NavigationBarItem(
+                        icon = { Icon(screen.icon, contentDescription = screen.title) },
+                        label = { Text(screen.title) },
+                        selected = isSelected,
+                        onClick = {
+                            if (!isSelected) {
+                                navController.navigate(screen.route)
+                            }
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color.White,
+                            selectedTextColor = Color(0xFF3022A6),
+                            indicatorColor = Color(0xFF3022A6),
+                            unselectedIconColor = Color.Gray,
+                            unselectedTextColor = Color.Gray
+                        )
+                    )
+                }
+            }
+        },
         containerColor = Color(0xFF3022A6)
     ) { paddingValues ->
         Surface(
@@ -87,7 +119,7 @@ fun SettingsScreen(navController: NavHostController) {
                     .fillMaxSize()
                     .padding(horizontal = 20.dp)
             ) {
-                // Tab Row to match Figma Screenshot
+                // Tab Row
                 ScrollableTabRow(
                     selectedTabIndex = selectedTab,
                     containerColor = Color.Transparent,
@@ -134,9 +166,9 @@ fun SettingsScreen(navController: NavHostController) {
                         1 -> { // Notifications
                             Text("Notifications", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
                             Spacer(modifier = Modifier.height(16.dp))
-                            SettingsSwitchItem("Allow Push Notifications", pushNotifications) { pushNotifications = it }
-                            SettingsSwitchItem("Class Reminders", classReminders) { classReminders = it }
-                            SettingsSwitchItem("Checklist Reminders", checklistReminders) { checklistReminders = it }
+                            SettingsSwitchItem("Allow Push Notifications", viewModel.pushNotifications) { viewModel.pushNotifications = it }
+                            SettingsSwitchItem("Class Reminders", viewModel.classReminders) { viewModel.classReminders = it }
+                            SettingsSwitchItem("Checklist Reminders", viewModel.checklistReminders) { viewModel.checklistReminders = it }
                         }
                         2 -> { // Location
                             Text("Location & Map Preferences", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
@@ -153,6 +185,28 @@ fun SettingsScreen(navController: NavHostController) {
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    // Logout Button
+                    Button(
+                        onClick = {
+                            authViewModel.logout {
+                                // The MainActivity will detect the null user and show login
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF4D4D))
+                    ) {
+                        Icon(Icons.Default.Logout, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Logout", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
