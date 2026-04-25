@@ -6,7 +6,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.provider.Settings
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.AndroidViewModel
 import com.example.homebase.NotificationReceiver
@@ -130,7 +129,6 @@ class ChecklistViewModel(application: Application) : AndroidViewModel(applicatio
                     pendingIntent
                 )
             } else {
-                // Fallback to non-exact if permission is missing
                 alarmManager.setAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     timeInMillis,
@@ -169,6 +167,18 @@ class ChecklistViewModel(application: Application) : AndroidViewModel(applicatio
         val newId = (System.currentTimeMillis() % 1000000).toInt()
         _items.add(ChecklistItem(newId, title, false, category))
         saveData()
+    }
+
+    fun addSubItem(parentId: Int, title: String) {
+        val index = _items.indexOfFirst { it.id == parentId }
+        if (index != -1) {
+            val parent = _items[index]
+            val newId = (System.currentTimeMillis() % 1000000).toInt()
+            val newSubItem = ChecklistItem(newId, title, false, parent.category)
+            val updatedSubItems = parent.subItems + newSubItem
+            _items[index] = parent.copy(subItems = updatedSubItems)
+            saveData()
+        }
     }
 
     fun getProgress(): Float {

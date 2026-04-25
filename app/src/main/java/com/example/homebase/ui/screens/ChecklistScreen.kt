@@ -192,9 +192,14 @@ fun ChecklistScreen(
 
     if (showAddDialog) {
         AddChecklistItemDialog(
+            existingItems = items,
             onDismiss = { showAddDialog = false },
-            onAdd = { title, category ->
-                viewModel.addItem(title, category)
+            onAdd = { title, category, parentId ->
+                if (parentId == null) {
+                    viewModel.addItem(title, category)
+                } else {
+                    viewModel.addSubItem(parentId, title)
+                }
                 showAddDialog = false
             }
         )
@@ -354,11 +359,14 @@ fun ExpandableChecklistCard(
 
 @Composable
 fun AddChecklistItemDialog(
+    existingItems: List<ChecklistItem>,
     onDismiss: () -> Unit,
-    onAdd: (String, String) -> Unit
+    onAdd: (String, String, Int?) -> Unit
 ) {
     var title by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("This Week") }
+    var selectedParentId by remember { mutableStateOf<Int?>(null) }
+    var isSubItemMode by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -367,13 +375,73 @@ fun AddChecklistItemDialog(
             color = Color.White
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
-                Text("Add New Task", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text(
+                    text = if (isSubItemMode) "Add Step to Task" else "Add New Task",
+                    fontWeight = FontWeight.Bold, 
+                    fontSize = 20.sp
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Mode Selection
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = !isSubItemMode,
+                        onClick = { isSubItemMode = false },
+                        label = { Text("New Main Task") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF3022A6),
+                            selectedLabelColor = Color.White
+                        )
+                    )
+                    FilterChip(
+                        selected = isSubItemMode,
+                        onClick = { isSubItemMode = true },
+                        label = { Text("Add to Existing") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF3022A6),
+                            selectedLabelColor = Color.White
+                        )
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
                 
+                if (isSubItemMode) {
+                    Text("Select Main Task", fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color.Gray)
+                    var expanded by remember { mutableStateOf(false) }
+                    val selectedParent = existingItems.find { it.id == selectedParentId }
+                    
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedButton(
+                            onClick = { expanded = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(selectedParent?.title ?: "Select a task...")
+                        }
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.fillMaxWidth(0.8f)
+                        ) {
+                            existingItems.forEach { item ->
+                                DropdownMenuItem(
+                                    text = { Text(item.title) },
+                                    onClick = {
+                                        selectedParentId = item.id
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Task Title") },
+                    label = { Text(if (isSubItemMode) "Step Name" else "Task Title") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF3022A6),
@@ -381,21 +449,22 @@ fun AddChecklistItemDialog(
                     )
                 )
                 
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Text("Category", fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color.Gray)
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val categories = listOf("This Week", "Upcoming")
-                    categories.forEach { category ->
-                        FilterChip(
-                            selected = selectedCategory == category,
-                            onClick = { selectedCategory = category },
-                            label = { Text(category) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFF3022A6),
-                                selectedLabelColor = Color.White
+                if (!isSubItemMode) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Category", fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color.Gray)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val categories = listOf("This Week", "Upcoming")
+                        categories.forEach { category ->
+                            FilterChip(
+                                selected = selectedCategory == category,
+                                onClick = { selectedCategory = category },
+                                label = { Text(category) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color(0xFF3022A6),
+                                    selectedLabelColor = Color.White
+                                )
                             )
-                        )
+                        }
                     }
                 }
                 
@@ -404,9 +473,13 @@ fun AddChecklistItemDialog(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) { Text("Cancel", color = Color.Gray) }
                     Button(
-                        onClick = { if (title.isNotBlank()) onAdd(title, selectedCategory) },
+                        onClick = { 
+                            if (title.isNotBlank()) {
+                                onAdd(title, selectedCategory, if (isSubItemMode) selectedParentId else null)
+                            }
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3022A6)),
-                        enabled = title.isNotBlank()
+                        enabled = title.isNotBlank() && (!isSubItemMode || selectedParentId != null)
                     ) {
                         Text("Add")
                     }
