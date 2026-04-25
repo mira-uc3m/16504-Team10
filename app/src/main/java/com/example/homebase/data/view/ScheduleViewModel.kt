@@ -14,7 +14,7 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.temporal.ChronoUnit
+import java.time.temporal.TemporalAdjusters
 
 class ScheduleViewModel(
     private val repository: ScheduleRepository = ScheduleRepository(),
@@ -36,7 +36,166 @@ class ScheduleViewModel(
     }
 
     init {
+        addMockData()
         fetchScheduleFromFirebase()
+    }
+
+    private fun addMockData() {
+        val today = LocalDate.now()
+        val monday = today.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
+        val tuesday = monday.plusDays(1)
+        val wednesday = monday.plusDays(2)
+        val thursday = monday.plusDays(3)
+        val friday = monday.plusDays(4)
+
+        val mockEvents = listOf(
+            // Monday
+            ScheduleEvent(
+                id = "mock1",
+                name = "Mobile Applications",
+                location = "Room 402",
+                time = "09:30 AM",
+                date = monday.toString(),
+                color = 0xFF3022A6L,
+                iconIndex = 0,
+                repeatType = "Weekly"
+            ),
+            ScheduleEvent(
+                id = "mock2",
+                name = "Operating Systems",
+                location = "Lab 1.1",
+                time = "11:00 AM",
+                date = monday.toString(),
+                color = 0xFFD85D6AL,
+                iconIndex = 1,
+                repeatType = "Weekly"
+            ),
+            ScheduleEvent(
+                id = "mock3",
+                name = "Software Engineering",
+                location = "Auditorium A",
+                time = "01:00 PM",
+                date = monday.toString(),
+                color = 0xFF42A5F5L,
+                iconIndex = 2,
+                repeatType = "Weekly"
+            ),
+            // Tuesday
+            ScheduleEvent(
+                id = "mock4",
+                name = "Computer Networks",
+                location = "Room 305",
+                time = "09:30 AM",
+                date = tuesday.toString(),
+                color = 0xFFE9B25AL,
+                iconIndex = 3,
+                repeatType = "Weekly"
+            ),
+            ScheduleEvent(
+                id = "mock5",
+                name = "Database Systems",
+                location = "Room 202",
+                time = "11:30 AM",
+                date = tuesday.toString(),
+                color = 0xFF4DB6ACL,
+                iconIndex = 4,
+                repeatType = "Weekly"
+            ),
+            ScheduleEvent(
+                id = "mock6",
+                name = "Mobile Applications",
+                location = "Room 402",
+                time = "02:30 PM",
+                date = tuesday.toString(),
+                color = 0xFF3022A6L,
+                iconIndex = 0,
+                repeatType = "Weekly"
+            ),
+            // Wednesday
+            ScheduleEvent(
+                id = "mock7",
+                name = "Software Engineering",
+                location = "Auditorium A",
+                time = "09:30 AM",
+                date = wednesday.toString(),
+                color = 0xFF42A5F5L,
+                iconIndex = 2,
+                repeatType = "Weekly"
+            ),
+            ScheduleEvent(
+                id = "mock8",
+                name = "Operating Systems",
+                location = "Lab 1.1",
+                time = "11:00 AM",
+                date = wednesday.toString(),
+                color = 0xFFD85D6AL,
+                iconIndex = 1,
+                repeatType = "Weekly"
+            ),
+            ScheduleEvent(
+                id = "mock9",
+                name = "Artificial Intelligence",
+                location = "Room 101",
+                time = "01:00 PM",
+                date = wednesday.toString(),
+                color = 0xFFE9B25AL,
+                iconIndex = 3,
+                repeatType = "Weekly"
+            ),
+            // Thursday
+            ScheduleEvent(
+                id = "mock10",
+                name = "Computer Networks",
+                location = "Room 305",
+                time = "09:30 AM",
+                date = thursday.toString(),
+                color = 0xFFE9B25AL,
+                iconIndex = 3,
+                repeatType = "Weekly"
+            ),
+            ScheduleEvent(
+                id = "mock11",
+                name = "Spanish Language",
+                location = "Room 501",
+                time = "11:30 AM",
+                date = thursday.toString(),
+                color = 0xFF81C784L,
+                iconIndex = 4,
+                repeatType = "Weekly"
+            ),
+            ScheduleEvent(
+                id = "mock12",
+                name = "Ethics in Engineering",
+                location = "Room 205",
+                time = "02:00 PM",
+                date = thursday.toString(),
+                color = 0xFF3022A6L,
+                iconIndex = 0,
+                repeatType = "Weekly"
+            ),
+            // Friday
+            ScheduleEvent(
+                id = "mock13",
+                name = "Distributed Systems",
+                location = "Lab 2.3",
+                time = "10:00 AM",
+                date = friday.toString(),
+                color = 0xFF4DB6ACL,
+                iconIndex = 5,
+                repeatType = "Weekly"
+            ),
+            ScheduleEvent(
+                id = "mock14",
+                name = "Capstone Project",
+                location = "Meeting Room",
+                time = "01:00 PM",
+                date = friday.toString(),
+                color = 0xFFD85D6AL,
+                iconIndex = 1,
+                repeatType = "Weekly"
+            )
+        )
+        allActivities.addAll(mockEvents)
     }
 
     fun fetchScheduleFromFirebase() {
@@ -45,8 +204,11 @@ class ScheduleViewModel(
             viewModelScope.launch {
                 isLoading.value = true
                 val events = repository.getEvents(uid)
-                allActivities.clear()
-                allActivities.addAll(events)
+                events.forEach { event ->
+                    if (allActivities.none { it.id == event.id }) {
+                        allActivities.add(event)
+                    }
+                }
                 isLoading.value = false
             }
         }
@@ -74,37 +236,36 @@ class ScheduleViewModel(
             if (success) {
                 notificationRepository.deleteNotificationByEventId(event.id)
                 fetchScheduleFromFirebase()
+            } else if (event.id.startsWith("mock")) {
+                allActivities.remove(event)
             }
         }
     }
 
-    /**
-     * Delete just the instance of a repeating event on a specific date.
-     * This is implemented by setting the end date of the current event to the day before,
-     * and creating a new identical event starting from the day after.
-     */
     fun deleteSingleInstance(event: ScheduleEvent, date: LocalDate) {
         viewModelScope.launch {
             val eventStartDate = LocalDate.parse(event.date)
             
             if (date == eventStartDate) {
-                // If deleting the very first day, just move the start date forward
                 val newStartDate = when (event.repeatType) {
                     "Daily" -> date.plusDays(1)
                     "Weekly" -> date.plusWeeks(1)
                     else -> date.plusDays(1)
                 }
                 
-                // If the new start date is after the end date, just delete the whole thing
                 if (event.endDate != null && newStartDate.isAfter(LocalDate.parse(event.endDate))) {
                     deleteEvent(event)
                 } else {
                     val updatedEvent = event.copy(date = newStartDate.toString())
-                    repository.postEvent(updatedEvent)
-                    fetchScheduleFromFirebase()
+                    if (!event.id.startsWith("mock")) {
+                        repository.postEvent(updatedEvent)
+                        fetchScheduleFromFirebase()
+                    } else {
+                        allActivities.remove(event)
+                        allActivities.add(updatedEvent)
+                    }
                 }
             } else {
-                // Split the event into two: one ending before 'date', one starting after 'date'
                 val beforeEndDate = date.minusDays(1).toString()
                 val afterStartDate = when (event.repeatType) {
                     "Daily" -> date.plusDays(1)
@@ -112,24 +273,35 @@ class ScheduleViewModel(
                     else -> date.plusDays(1)
                 }
 
-                // Update original event to end before 'date'
                 val updatedOriginal = event.copy(endDate = beforeEndDate)
-                repository.postEvent(updatedOriginal)
+                
+                if (!event.id.startsWith("mock")) {
+                    repository.postEvent(updatedOriginal)
+                } else {
+                    allActivities.remove(event)
+                    allActivities.add(updatedOriginal)
+                }
 
-                // Create new event starting after 'date'
                 if (event.endDate == null || afterStartDate.isBefore(LocalDate.parse(event.endDate).plusDays(1))) {
                     val newEvent = event.copy(
-                        id = java.util.UUID.randomUUID().toString(),
+                        id = if (event.id.startsWith("mock")) "mock_" + java.util.UUID.randomUUID().toString() else java.util.UUID.randomUUID().toString(),
                         date = afterStartDate.toString()
                     )
-                    repository.postEvent(newEvent)
+                    if (!event.id.startsWith("mock")) {
+                        repository.postEvent(newEvent)
+                    } else {
+                        allActivities.add(newEvent)
+                    }
                 }
-                fetchScheduleFromFirebase()
+                
+                if (!event.id.startsWith("mock")) {
+                    fetchScheduleFromFirebase()
+                }
             }
         }
     }
 
-    private fun isEventOnDate(event: ScheduleEvent, targetDate: LocalDate): Boolean {
+    fun isEventOnDate(event: ScheduleEvent, targetDate: LocalDate): Boolean {
         return try {
             val eventDate = LocalDate.parse(event.date)
             if (targetDate.isBefore(eventDate)) return false

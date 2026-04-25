@@ -37,33 +37,45 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Header Area
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(100.dp))
             
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(horizontal = 24.dp)
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_homebase_logo_white),
+                    painter = painterResource(id = R.drawable.ic_homebase_splash_logo),
                     contentDescription = "HomeBase Logo",
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(72.dp)
                 )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "HOME BASE",
-                    color = Color.White,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    Text(
+                        text = "HOME BASE",
+                        color = Color.White,
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        lineHeight = 40.sp,
+                        letterSpacing = 1.sp
+                    )
+                    
+                    Text(
+                        text = "Your Exchange Companion",
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 0.5.sp
+                    )
+                }
             }
             
-            Text(
-                text = "Your Exchange Companion",
-                color = Color.White.copy(alpha = 0.7f),
-                fontSize = 16.sp
-            )
-            
-            Spacer(modifier = Modifier.height(60.dp))
+            Spacer(modifier = Modifier.height(70.dp))
 
             // Login Form Area
             Surface(
@@ -73,7 +85,7 @@ fun LoginScreen(
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(32.dp)
+                        .padding(horizontal = 32.dp, vertical = 40.dp)
                         .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -126,9 +138,13 @@ fun LoginScreen(
                     Button(
                         onClick = {
                             if (isSignUp) {
-                                authViewModel.signUp(email, password) { onLoginSuccess() }
+                                authViewModel.signUp(email, password) { result ->
+                                    if (result == null) onLoginSuccess() else errorMessage = result
+                                }
                             } else {
-                                authViewModel.login(email, password) { onLoginSuccess() }
+                                authViewModel.login(email, password) { result ->
+                                    if (result == null) onLoginSuccess() else errorMessage = result
+                                }
                             }
                         },
                         modifier = Modifier

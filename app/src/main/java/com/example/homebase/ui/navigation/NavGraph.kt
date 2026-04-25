@@ -59,7 +59,7 @@ fun AppNavGraph(navController: NavHostController) {
             ChecklistScreen(navController)
         }
         composable(Screen.ClassList.route) {
-            ClassListScreen(navController)
+            ClassListScreen(navController, viewModel = scheduleViewModel)
         }
     }
 }
