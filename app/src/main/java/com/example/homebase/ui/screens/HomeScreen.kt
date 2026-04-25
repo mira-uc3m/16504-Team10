@@ -122,7 +122,7 @@ fun HomeScreen(navController: NavHostController) {
                     Triple("My\nSchedule", Icons.Default.DateRange, "schedule_screen"),
                     Triple("Exchange\nChecklist", Icons.Default.FormatListBulleted, "checklist_screen"),
                     Triple("Class\nList", Icons.Default.ListAlt, "classlist_screen"),
-                    Triple("Quick\nLinks", Icons.Default.Link, "links_screen")
+                    Triple("Quick\nLinks", Icons.Default.Link, Screen.QuickLinks.route)
                 )
 
                 LazyVerticalGrid(
