@@ -1,9 +1,11 @@
 package com.example.homebase.ui.screens
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
-import android.location.Location
 import android.os.Looper
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,89 +19,120 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.homebase.data.model.CampusData
 import com.example.homebase.data.model.CampusBuilding
+import com.example.homebase.data.view.SettingsViewModel
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import kotlin.math.*
 
+@SuppressLint("MissingPermission")
 @Composable
-fun MapScreen(navController: NavHostController) {
+fun MapScreen(
+    navController: NavHostController,
+    settingsViewModel: SettingsViewModel = viewModel()
+) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     var selectedCampus by remember { mutableStateOf("Leganes") }
-    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-    var userLocation by remember { mutableStateOf<Location?>(null) }
-    
-    // Permission state that refreshes when screen is resumed
-    var hasLocationPermission by remember { mutableStateOf(false) }
+    var showEnableLocationDialog by remember { mutableStateOf(false) }
 
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                hasLocationPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                                       ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    var hasLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
     }
 
-    // Request active location updates to ensure real-time tracking works
-    DisposableEffect(hasLocationPermission) {
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        hasLocationPermission = permissions.values.any { it }
         if (hasLocationPermission) {
-            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000L)
-                .setMinUpdateIntervalMillis(2000L)
-                .build()
-                
-            val locationCallback = object : LocationCallback() {
-                override fun onLocationResult(result: LocationResult) {
-                    userLocation = result.lastLocation
+            settingsViewModel.toggleLocationTracking(true)
+        } else {
+            settingsViewModel.toggleLocationTracking(false)
+        }
+    }
+
+    // Real user location state
+    var userLocation by remember { mutableStateOf(LatLng(40.3330, -3.7635)) }
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
+    // Request location updates when permission is granted and tracking is enabled
+    DisposableEffect(hasLocationPermission, settingsViewModel.locationTrackingEnabled) {
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.lastLocation?.let {
+                    userLocation = LatLng(it.latitude, it.longitude)
                 }
             }
+        }
+
+        if (hasLocationPermission && settingsViewModel.locationTrackingEnabled) {
+            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+                .setMinUpdateDistanceMeters(5f)
+                .build()
             
             try {
-                fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
-            } catch (e: SecurityException) {}
-            
-            onDispose {
-                fusedLocationClient.removeLocationUpdates(locationCallback)
+                fusedLocationClient.requestLocationUpdates(
+                    locationRequest,
+                    locationCallback,
+                    Looper.getMainLooper()
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-        } else {
-            onDispose {}
+        }
+
+        onDispose {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
         }
     }
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(CampusData.leganesPos, 16f)
-    }
-
-    // Initial centering on user when detected
-    var hasCenteredOnUser by remember { mutableStateOf(false) }
-    LaunchedEffect(userLocation) {
-        if (userLocation != null && !hasCenteredOnUser) {
-            val userLatLng = LatLng(userLocation!!.latitude, userLocation!!.longitude)
-            cameraPositionState.animate(
-                com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(userLatLng, 16f)
-            )
-            hasCenteredOnUser = true
-        }
+        position = CameraPosition.fromLatLngZoom(CampusData.leganesPos, 15f)
     }
 
     LaunchedEffect(selectedCampus) {
-        // Only move camera if user location hasn't been set yet or if user manually toggles campus
         val targetPos = if (selectedCampus == "Leganes") CampusData.leganesPos else CampusData.getafePos
         cameraPositionState.animate(
             com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(targetPos, 16f)
+        )
+    }
+
+    if (showEnableLocationDialog) {
+        AlertDialog(
+            onDismissRequest = { showEnableLocationDialog = false },
+            title = { Text("Enable Location?") },
+            text = { Text("Location tracking is disabled in settings. Would you like to enable it to see your position on the map?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    permissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        )
+                    )
+                    showEnableLocationDialog = false
+                }) { Text("Enable") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEnableLocationDialog = false }) { Text("Cancel") }
+            }
         )
     }
 
@@ -110,13 +143,8 @@ fun MapScreen(navController: NavHostController) {
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
-                uiSettings = MapUiSettings(
-                    zoomControlsEnabled = false,
-                    myLocationButtonEnabled = hasLocationPermission
-                ),
-                properties = MapProperties(
-                    isMyLocationEnabled = hasLocationPermission
-                )
+                uiSettings = MapUiSettings(zoomControlsEnabled = false),
+                properties = MapProperties(isMyLocationEnabled = settingsViewModel.locationTrackingEnabled && hasLocationPermission)
             ) {
                 val currentBuildings = if (selectedCampus == "Leganes")
                     CampusData.leganesBuildings else CampusData.getafeBuildings
@@ -127,14 +155,51 @@ fun MapScreen(navController: NavHostController) {
                         title = building.name
                     )
                 }
+
+                // If location is enabled, we show a marker for the user as well (or use isMyLocationEnabled)
+                if (settingsViewModel.locationTrackingEnabled && hasLocationPermission) {
+                    Marker(
+                        state = MarkerState(position = userLocation),
+                        title = "You are here",
+                        icon = com.google.android.gms.maps.model.BitmapDescriptorFactory.defaultMarker(
+                            com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_AZURE
+                        )
+                    )
+                }
+            }
+
+            // Location FAB
+            FloatingActionButton(
+                onClick = {
+                    if (!hasLocationPermission) {
+                        permissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                            )
+                        )
+                    } else if (!settingsViewModel.locationTrackingEnabled) {
+                        showEnableLocationDialog = true
+                    } else {
+                        cameraPositionState.move(
+                            com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(userLocation, 17f)
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                containerColor = Color.White,
+                contentColor = Color(0xFF3F51B5)
+            ) {
+                Icon(Icons.Default.MyLocation, contentDescription = "My Location")
             }
         }
 
-        BuildingListSection(selectedCampus, userLocation)
+        BuildingListSection(selectedCampus, settingsViewModel.locationTrackingEnabled && hasLocationPermission, userLocation)
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapHeader(navController: NavHostController, selected: String, onToggle: (String) -> Unit) {
     Column(modifier = Modifier.padding(top = 48.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)) {
@@ -154,7 +219,7 @@ fun MapHeader(navController: NavHostController, selected: String, onToggle: (Str
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-             CampusToggleButton(
+            CampusToggleButton(
                 label = "Leganes",
                 isSelected = selected == "Leganes",
                 modifier = Modifier.weight(1f)
@@ -176,7 +241,7 @@ fun CampusToggleButton(label: String, isSelected: Boolean, modifier: Modifier, o
         modifier = modifier.height(56.dp),
         shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) Color(0xFF3022A6) else Color(0xFFBDBDBD)
+            containerColor = if (isSelected) Color(0xFF3F51B5) else Color(0xFFBDBDBD)
         )
     ) {
         Text(label, color = Color.White, fontWeight = FontWeight.Bold)
@@ -184,7 +249,7 @@ fun CampusToggleButton(label: String, isSelected: Boolean, modifier: Modifier, o
 }
 
 @Composable
-fun BuildingListSection(campus: String, userLocation: Location?) {
+fun BuildingListSection(campus: String, locationEnabled: Boolean, userPos: LatLng) {
     Column(modifier = Modifier.padding(16.dp)) {
         OutlinedTextField(
             value = "",
@@ -201,12 +266,12 @@ fun BuildingListSection(campus: String, userLocation: Location?) {
 
         val buildings = if (campus == "Leganes") CampusData.leganesBuildings else CampusData.getafeBuildings
 
-        LazyColumn(modifier = Modifier.fillMaxWidth().height(200.dp)) {
+        LazyColumn(modifier = Modifier.fillMaxWidth()) {
             items(buildings) { building ->
-                val calculatedDistance = if (userLocation != null) {
-                    calculateDistance(userLocation.latitude, userLocation.longitude, building.position.latitude, building.position.longitude)
+                val distanceText = if (locationEnabled) {
+                    calculateDistance(userPos, building.position)
                 } else {
-                    building.distance 
+                    "--"
                 }
 
                 Row(
@@ -218,7 +283,7 @@ fun BuildingListSection(campus: String, userLocation: Location?) {
                     Icon(
                         Icons.Default.LocationOn,
                         contentDescription = null,
-                        tint = Color(0xFF3022A6),
+                        tint = Color(0xFF3F51B5),
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(16.dp))
@@ -228,7 +293,7 @@ fun BuildingListSection(campus: String, userLocation: Location?) {
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        calculatedDistance,
+                        distanceText,
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray
                     )
@@ -239,19 +304,19 @@ fun BuildingListSection(campus: String, userLocation: Location?) {
     }
 }
 
-fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): String {
-    val r = 6371
-    val dLat = Math.toRadians(lat2 - lat1)
-    val dLon = Math.toRadians(lon2 - lon1)
+fun calculateDistance(p1: LatLng, p2: LatLng): String {
+    val r = 6371 // Earth radius in km
+    val dLat = Math.toRadians(p2.latitude - p1.latitude)
+    val dLon = Math.toRadians(p2.longitude - p1.longitude)
     val a = sin(dLat / 2) * sin(dLat / 2) +
-            cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+            cos(Math.toRadians(p1.latitude)) * cos(Math.toRadians(p2.latitude)) *
             sin(dLon / 2) * sin(dLon / 2)
     val c = 2 * atan2(sqrt(a), sqrt(1 - a))
     val distance = r * c
 
     return if (distance < 1) {
-        "${(distance * 1000).roundToInt()} m"
+        "${(distance * 1000).toInt()} m"
     } else {
-        "${"%.1f".format(distance)} km"
+        String.format("%.1f km", distance)
     }
 }

@@ -15,7 +15,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.homebase.data.model.ClassActivity
 import com.example.homebase.data.model.DateEntry
 import com.example.homebase.data.view.AddScheduleViewModel
 import com.example.homebase.data.view.ScheduleViewModel
@@ -24,6 +23,8 @@ import java.util.UUID
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.rememberDatePickerState
+import com.example.homebase.data.model.ScheduleEvent
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,22 +48,33 @@ fun AddScheduleScreen(
         bottomBar = {
             Button(
                 onClick = {
-                    // Logic to process entries and return
+                    val newEvents = mutableListOf<ScheduleEvent>()
+                    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                    
                     viewModel.dateEntries.forEach { entry ->
                         try {
-                            val date = LocalDate.of(entry.year.toInt(), entry.month.toInt(), entry.day.toInt())
-                            scheduleViewModel.allActivities.add(
-                                ClassActivity(
-                                    id = UUID.randomUUID().toString(),
-                                    name = viewModel.className,
-                                    room = viewModel.location,
-                                    time = entry.time,
-                                    date = date,
-                                    color = viewModel.selectedColor
-                                )
+                            val startDate = LocalDate.of(entry.year.toInt(), entry.month.toInt(), entry.day.toInt())
+                            val endDate = if (!entry.isIndefinite && entry.endYear.isNotEmpty()) {
+                                LocalDate.of(entry.endYear.toInt(), entry.endMonth.toInt(), entry.endDay.toInt()).toString()
+                            } else null
+
+                            val event = ScheduleEvent(
+                                id = UUID.randomUUID().toString(),
+                                userId = uid,
+                                name = viewModel.className,
+                                location = viewModel.location,
+                                time = entry.time,
+                                date = startDate.toString(),
+                                color = viewModel.selectedColor,
+                                iconIndex = viewModel.selectedIconIndex,
+                                repeatType = entry.repeat,
+                                endDate = endDate
                             )
+
+                            newEvents.add(event)
                         } catch (e: Exception) { /* Handle invalid dates */ }
                     }
+                    scheduleViewModel.saveEventsToFirebase(newEvents)
                     onBack()
                 },
                 modifier = Modifier.fillMaxWidth().padding(16.dp).height(56.dp),
@@ -87,9 +99,14 @@ fun AddScheduleScreen(
                 Surface(
                     modifier = Modifier.size(60.dp),
                     shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFF332CA4)
+                    color = Color(viewModel.selectedColor)
                 ) {
-                    Icon(viewModel.selectedIcon, contentDescription = null, tint = Color.White, modifier = Modifier.padding(12.dp))
+                    Icon(
+                        viewModel.icons[viewModel.selectedIconIndex],
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.padding(12.dp)
+                    )
                 }
                 Spacer(Modifier.width(16.dp))
                 OutlinedTextField(
@@ -97,8 +114,7 @@ fun AddScheduleScreen(
                     onValueChange = { viewModel.className = it },
                     label = { Text("Class Name") },
                     placeholder = { Text("Input") },
-                    modifier = Modifier.fillMaxWidth(),
-                    trailingIcon = { Icon(Icons.Default.Cancel, contentDescription = null) }
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
@@ -117,16 +133,15 @@ fun AddScheduleScreen(
 
             Text("Icon", color = Color.Gray, style = MaterialTheme.typography.labelLarge)
             Row(Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                val icons = listOf(Icons.Default.Stars, Icons.Default.Thunderstorm, Icons.Default.Notes, Icons.Default.Train, Icons.Default.List)
-                icons.forEach { icon ->
+                viewModel.icons.forEachIndexed { index, icon ->
                     Icon(
                         icon,
                         contentDescription = null,
                         modifier = Modifier
                             .size(28.dp)
-                            .clickable { viewModel.selectedIcon = icon }
-                            .border(if(viewModel.selectedIcon == icon) 1.dp else 0.dp, Color.Blue),
-                        tint = if(viewModel.selectedIcon == icon) Color.Black else Color.Gray
+                            .clickable { viewModel.selectedIconIndex = index }
+                            .border(if(viewModel.selectedIconIndex == index) 1.dp else 0.dp, Color.Blue),
+                        tint = if(viewModel.selectedIconIndex == index) Color.Black else Color.Gray
                     )
                 }
             }
@@ -148,7 +163,6 @@ fun AddScheduleScreen(
                 DateRowItem(
                     entry = entry,
                     onDelete = {
-                        // Prevent deleting the very last row so the form isn't empty
                         if (viewModel.dateEntries.size > 1) {
                             viewModel.dateEntries.removeAt(index)
                         }
@@ -168,7 +182,6 @@ fun AddScheduleScreen(
                 Spacer(Modifier.width(8.dp))
                 Text("Add Date", fontWeight = FontWeight.Bold)
             }
-            HorizontalDivider()
         }
     }
 }
@@ -180,16 +193,23 @@ fun DateRowItem(
     onDelete: () -> Unit
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
+    var showEndDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
+    val endDatePickerState = rememberDatePickerState()
     val timePickerState = rememberTimePickerState(initialHour = 11, initialMinute = 0)
     var expanded by remember { mutableStateOf(false) }
 
-    // Convert selection to String for display --> DD/MM/YYYY
     val dateDisplay = if (entry.day.isNotEmpty()) {
         "${entry.day}/${entry.month}/${entry.year}"
     } else {
         "Select Date"
+    }
+    
+    val endDateDisplay = if (entry.endDay.isNotEmpty()) {
+        "${entry.endDay}/${entry.month}/${entry.year}"
+    } else {
+        "Select End Date"
     }
 
     if (showDatePicker) {
@@ -197,25 +217,33 @@ fun DateRowItem(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    val selectedDate = datePickerState.selectedDateMillis?.let {
-                        java.time.Instant.ofEpochMilli(it)
-                            .atZone(java.time.ZoneId.systemDefault())
-                            .toLocalDate()
-                    }
-                    selectedDate?.let {
-                        entry.day = it.dayOfMonth.toString()
-                        entry.month = it.monthValue.toString()
-                        entry.year = it.year.toString()
+                    datePickerState.selectedDateMillis?.let {
+                        val date = java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                        entry.day = date.dayOfMonth.toString()
+                        entry.month = date.monthValue.toString()
+                        entry.year = date.year.toString()
                     }
                     showDatePicker = false
                 }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
             }
-        ) {
-            DatePicker(state = datePickerState)
-        }
+        ) { DatePicker(state = datePickerState) }
+    }
+    
+    if (showEndDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showEndDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    endDatePickerState.selectedDateMillis?.let {
+                        val date = java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                        entry.endDay = date.dayOfMonth.toString()
+                        entry.endMonth = date.monthValue.toString()
+                        entry.endYear = date.year.toString()
+                    }
+                    showEndDatePicker = false
+                }) { Text("OK") }
+            }
+        ) { DatePicker(state = endDatePickerState) }
     }
 
     if (showTimePicker) {
@@ -223,15 +251,9 @@ fun DateRowItem(
             onDismissRequest = { showTimePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    // Formats time as "HH:mm"
-                    val hour = timePickerState.hour.toString().padStart(2, '0')
-                    val min = timePickerState.minute.toString().padStart(2, '0')
-                    entry.time = "$hour:$min"
+                    entry.time = "${timePickerState.hour.toString().padStart(2, '0')}:${timePickerState.minute.toString().padStart(2, '0')}"
                     showTimePicker = false
                 }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
             },
             text = { TimePicker(state = timePickerState) }
         )
@@ -241,45 +263,43 @@ fun DateRowItem(
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlinedCard(
                 onClick = { showDatePicker = true },
-                modifier = Modifier.weight(3f),
-                shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, Color.LightGray)
+                modifier = Modifier.weight(1f)
             ) {
-                Text(
-                    text = dateDisplay,
-                    modifier = Modifier.padding(16.dp),
-                    color = if (entry.day.isEmpty()) Color.Gray else Color.Black
-                )
+                Text(dateDisplay, modifier = Modifier.padding(12.dp))
             }
-
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Close, contentDescription = "Remove", tint = Color.Gray)
-            }
-
-            // Time Pill
+            IconButton(onClick = onDelete) { Icon(Icons.Default.Close, null) }
             Surface(onClick = { showTimePicker = true }, shape = RoundedCornerShape(20.dp), color = Color(0xFFF0F0F0)) {
-                Text(entry.time, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), fontSize = 14.sp)
+                Text(entry.time, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
             }
         }
 
-        // Repeat Dropdown Row
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
             Text("Repeat", fontSize = 14.sp, color = Color.Gray)
             Spacer(Modifier.width(8.dp))
             Box {
-                OutlinedCard(
-                    onClick = { expanded = true },
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, Color.LightGray)
-                ) {
-                    Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedCard(onClick = { expanded = true }) {
+                    Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(entry.repeat, fontSize = 12.sp)
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        Icon(Icons.Default.ArrowDropDown, null)
                     }
                 }
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     listOf("Never", "Daily", "Weekly").forEach {
                         DropdownMenuItem(text = { Text(it) }, onClick = { entry.repeat = it; expanded = false })
+                    }
+                }
+            }
+        }
+        
+        if (entry.repeat != "Never") {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                Checkbox(checked = entry.isIndefinite, onCheckedChange = { entry.isIndefinite = it })
+                Text("Indefinite", fontSize = 14.sp)
+                
+                if (!entry.isIndefinite) {
+                    Spacer(Modifier.width(16.dp))
+                    OutlinedCard(onClick = { showEndDatePicker = true }) {
+                        Text(endDateDisplay, modifier = Modifier.padding(8.dp), fontSize = 12.sp)
                     }
                 }
             }

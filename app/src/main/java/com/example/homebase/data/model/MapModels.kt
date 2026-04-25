@@ -9,26 +9,23 @@ data class CampusBuilding(
 )
 
 object CampusData {
-    // Coordinates for Av. de la Universidad, 30, Leganés
+    // Coordinates for UC3M Leganés
     val leganesPos = LatLng(40.3323, -3.7656)
 
-    // Coordinates for C. Madrid, 126, Getafe
+    // Coordinates for UC3M Getafe
     val getafePos = LatLng(40.3045, -3.7258)
 
     val leganesBuildings = listOf(
-        CampusBuilding("Edificio 1 (Sabatini)", "50 m", LatLng(40.3331, -3.7653)),
-        CampusBuilding("Edificio 2 (Betancourt)", "120 m", LatLng(40.3327, -3.7648)),
-        CampusBuilding("Edificio 4 (Agustín de Betancourt)", "80 m", LatLng(40.3321, -3.7654)),
-        CampusBuilding("Edificio 7 (Juan Benet)", "70 m", LatLng(40.3324, -3.7667)),
-        CampusBuilding("Edificio 10 (Juan de la Cierva)", "150 m", LatLng(40.3322, -3.7674)),
-        CampusBuilding("Biblioteca Rey Pastor", "100 m", LatLng(40.3328, -3.7656))
+        CampusBuilding("Building 2 - Leonardo da Vinci", "--", LatLng(40.3320, -3.7645)),
+        CampusBuilding("Building 4 - Torres Quevedo", "--", LatLng(40.3330, -3.7665)),
+        CampusBuilding("Building 7 - Juan Benet", "--", LatLng(40.3325, -3.7658)),
+        CampusBuilding("Building 1 - Auditorium (Padre Soler)", "--", LatLng(40.3315, -3.7640))
     )
 
     val getafeBuildings = listOf(
-        CampusBuilding("Edificio 1 (Concepción Arenal)", "100 m", LatLng(40.3042, -3.7248)),
-        CampusBuilding("Edificio 10 (Carmen Martín Gaite)", "250 m", LatLng(40.3033, -3.7266)),
-        CampusBuilding("Edificio 15 (López Aranguren)", "200 m", LatLng(40.3038, -3.7259)),
-        CampusBuilding("Edificio 18 (Ortega y Gasset)", "180 m", LatLng(40.3051, -3.7255)),
-        CampusBuilding("Biblioteca de Ciencias Sociales", "120 m", LatLng(40.3048, -3.7250))
+        CampusBuilding("Library - María Moliner", "--", LatLng(40.3048, -3.7250)),
+        CampusBuilding("Building 15 - López Aranguren", "--", LatLng(40.3040, -3.7260)),
+        CampusBuilding("Building 14 - Concepción Arenal", "--", LatLng(40.3055, -3.7265)),
+        CampusBuilding("Student Center - Sports Complex", "--", LatLng(40.3030, -3.7240))
     )
 }

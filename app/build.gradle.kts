@@ -3,7 +3,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    //alias(libs.plugins.google.services)
+    alias(libs.plugins.google.services)
 }
 
 val localProperties = Properties()
@@ -16,7 +16,9 @@ val mapsApiKey = localProperties.getProperty("MAPS_API_KEY") ?: ""
 
 android {
     namespace = "com.example.homebase"
-    compileSdk = 36
+    compileSdk {
+        version = release(36)
+    }
 
     defaultConfig {
         applicationId = "com.example.homebase"
@@ -81,14 +83,8 @@ dependencies {
     implementation("com.google.maps.android:maps-compose:4.4.1")
     // Google Maps SDK
     implementation("com.google.android.gms:play-services-maps:19.0.0")
-    // Fix: Explicitly use string dependency to avoid version catalog issues
-    implementation("com.google.android.gms:play-services-location:21.0.1")
-
-    // Splash Screen
-    implementation(libs.androidx.core.splashscreen)
-    
-    // Material Components for XML themes
-    implementation(libs.material)
+    // Location services
+    implementation(libs.play.services.location)
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:34.11.0"))
@@ -96,4 +92,5 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
+    implementation("com.google.firebase:firebase-auth-ktx:23.0.0")
 }
