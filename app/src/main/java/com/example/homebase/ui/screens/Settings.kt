@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,6 +36,16 @@ fun SettingsScreen(navController: NavHostController) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("Language & Region", "Notifications", "Location")
     
+    // Language & Region States
+    var selectedRegion by remember { mutableStateOf("Canada 🇨🇦") }
+    var selectedLanguage by remember { mutableStateOf("English") }
+    var selectedCurrency by remember { mutableStateOf("CAD") }
+
+    val regions = listOf("Canada 🇨🇦", "United States 🇺🇸", "Spain 🇪🇸", "United Kingdom 🇬🇧", "France 🇫🇷", "Germany 🇩🇪", "Australia 🇦🇺")
+    val languages = listOf("English", "Spanish", "French", "German", "Chinese", "Portuguese", "Italian")
+    val currencies = listOf("CAD", "USD", "EUR", "GBP", "JPY", "AUD", "CNY")
+
+    // Notification States
     var pushNotifications by remember { mutableStateOf(true) }
     var classReminders by remember { mutableStateOf(false) }
     var checklistReminders by remember { mutableStateOf(true) }
@@ -87,7 +98,6 @@ fun SettingsScreen(navController: NavHostController) {
                     .fillMaxSize()
                     .padding(horizontal = 20.dp)
             ) {
-                // Tab Row to match Figma Screenshot
                 ScrollableTabRow(
                     selectedTabIndex = selectedTab,
                     containerColor = Color.Transparent,
@@ -127,9 +137,24 @@ fun SettingsScreen(navController: NavHostController) {
                         0 -> { // Language & Region
                             Text("Language & Region", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
                             Spacer(modifier = Modifier.height(16.dp))
-                            SettingsDropdownItem(label = "Region", value = "Canada 🇨🇦")
-                            SettingsDropdownItem(label = "Language", value = "English")
-                            SettingsDropdownItem(label = "Preferred Currency", value = "CAD")
+                            SettingsDropdownItem(
+                                label = "Region", 
+                                value = selectedRegion, 
+                                options = regions,
+                                onOptionSelected = { selectedRegion = it }
+                            )
+                            SettingsDropdownItem(
+                                label = "Language", 
+                                value = selectedLanguage, 
+                                options = languages,
+                                onOptionSelected = { selectedLanguage = it }
+                            )
+                            SettingsDropdownItem(
+                                label = "Preferred Currency", 
+                                value = selectedCurrency, 
+                                options = currencies,
+                                onOptionSelected = { selectedCurrency = it }
+                            )
                         }
                         1 -> { // Notifications
                             Text("Notifications", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
@@ -160,22 +185,52 @@ fun SettingsScreen(navController: NavHostController) {
 }
 
 @Composable
-fun SettingsDropdownItem(label: String, value: String) {
+fun SettingsDropdownItem(
+    label: String, 
+    value: String, 
+    options: List<String>,
+    onOptionSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
         Text(label, fontSize = 12.sp, color = Color.Gray)
-        Card(
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, Color(0xFFEEEEEE))
-        ) {
-            Row(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        Box {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .clickable { expanded = true },
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, Color(0xFFEEEEEE))
             ) {
-                Text(value, color = Color.Black, fontSize = 15.sp)
-                Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color(0xFF3022A6))
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(value, color = Color.Black, fontSize = 15.sp)
+                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color(0xFF3022A6))
+                }
+            }
+            
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.fillMaxWidth(0.9f)
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            onOptionSelected(option)
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
     }
