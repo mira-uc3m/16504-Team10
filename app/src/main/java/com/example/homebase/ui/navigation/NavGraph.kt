@@ -1,7 +1,6 @@
 package com.example.homebase.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -9,10 +8,12 @@ import com.example.homebase.data.view.ScheduleViewModel
 import com.example.homebase.ui.screens.AddScheduleScreen
 import com.example.homebase.ui.screens.CurrencyScreen
 import com.example.homebase.ui.screens.HomeScreen
-import com.example.homebase.ui.screens.NotificationsScreen
 import com.example.homebase.ui.screens.ScheduleScreen
 import com.example.homebase.ui.screens.SettingsScreen
 import com.example.homebase.ui.screens.MapScreen
+import com.example.homebase.ui.screens.QuickLinksScreen
+import com.example.homebase.ui.screens.ClassListScreen
+import com.example.homebase.ui.screens.ChecklistScreen
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -23,7 +24,7 @@ fun AppNavGraph(navController: NavHostController) {
         startDestination = Screen.Home.route
     ) {
         composable(Screen.Home.route) {
-            HomeScreen(navController = navController, viewModel=scheduleViewModel)
+            HomeScreen(navController)
         }
         composable(Screen.Settings.route) {
             SettingsScreen(navController)
@@ -46,8 +47,14 @@ fun AppNavGraph(navController: NavHostController) {
         composable(route = "map") {
             MapScreen(navController)
         }
-        composable(Screen.Notifications.route) {
-            NotificationsScreen(navController)
+        composable(route = "links_screen") {
+            QuickLinksScreen(navController)
+        }
+        composable(route = "classlist_screen") {
+            ClassListScreen(navController)
+        }
+        composable(route = "checklist_screen") {
+            ChecklistScreen(navController)
         }
     }
 }
