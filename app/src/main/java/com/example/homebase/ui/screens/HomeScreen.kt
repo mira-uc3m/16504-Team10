@@ -1,49 +1,30 @@
 package com.example.homebase.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.*
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.homebase.R
 import com.example.homebase.ui.navigation.Screen
-import com.example.homebase.data.view.ScheduleViewModel
-import com.example.homebase.data.view.NotificationViewModel
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import com.example.homebase.data.model.ScheduleEvent
-import androidx.lifecycle.viewmodel.compose.viewModel
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
-    navController: NavHostController, 
-    viewModel: ScheduleViewModel,
-    notificationViewModel: NotificationViewModel = viewModel()
-) {
-    LaunchedEffect(Unit) {
-        viewModel.fetchScheduleFromFirebase()
-    }
-
-    val todayClasses by viewModel.todayClasses
-    val notifications by notificationViewModel.notifications.collectAsState()
-    val unreadCount = notifications.size
-
+fun HomeScreen(navController: NavHostController) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -56,22 +37,22 @@ fun HomeScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = { navController.navigate(Screen.Notifications.route) }) {
-                        if (unreadCount > 0) {
-                            BadgedBox(
-                                badge = { Badge { Text("$unreadCount") } }
-                            ) {
-                                Icon(
-                                    Icons.Default.Notifications,
-                                    contentDescription = "Notifications",
-                                    tint = Color.White
-                                )
+                    IconButton(onClick = { /* Handle Notifications */ }) {
+                        BadgedBox(
+                            badge = { 
+                                Badge(
+                                    containerColor = Color(0xFFFF4D4D),
+                                    contentColor = Color.White
+                                ) { 
+                                    Text("3") 
+                                } 
                             }
-                        } else {
+                        ) {
                             Icon(
                                 Icons.Default.Notifications,
                                 contentDescription = "Notifications",
-                                tint = Color.White
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
                             )
                         }
                     }
@@ -80,11 +61,15 @@ fun HomeScreen(
                     Surface(
                         modifier = Modifier
                             .padding(start = 16.dp)
-                            .size(36.dp),
+                            .size(40.dp),
                         shape = RoundedCornerShape(4.dp),
                         color = Color.White
                     ) {
-                        // Logo content could go here
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_homebase_logo),
+                            contentDescription = "Home Base Logo",
+                            modifier = Modifier.padding(4.dp)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -92,40 +77,11 @@ fun HomeScreen(
                 )
             )
         },
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color.White,
-                tonalElevation = 8.dp
-            ) {
-                val navItems = listOf(Screen.Home, Screen.Settings)
-                navItems.forEach { screen ->
-                    val isSelected = screen == Screen.Home
-                    NavigationBarItem(
-                        icon = { Icon(screen.icon, contentDescription = screen.title) },
-                        label = { Text(screen.title) },
-                        selected = isSelected,
-                        onClick = {
-                            if (!isSelected) {
-                                navController.navigate(screen.route)
-                            }
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color.White,
-                            selectedTextColor = Color(0xFF3022A6),
-                            indicatorColor = Color(0xFF3022A6),
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray
-                        )
-                    )
-                }
-            }
-        },
         containerColor = Color(0xFF3022A6)
     ) { paddingValues ->
-        // Main content area with rounded top corners
         Surface(
             modifier = Modifier
-                .padding(paddingValues)
+                .padding(top = paddingValues.calculateTopPadding()) // Only pad the top
                 .fillMaxSize(),
             color = Color.White,
             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
@@ -146,54 +102,25 @@ fun HomeScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    if (todayClasses.isEmpty()) {
-                        // Empty State View
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.EventAvailable,
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp),
-                                tint = Color.LightGray
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                "No classes today!",
-                                color = Color.Gray,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Text(
-                                "Enjoy your free time.",
-                                color = Color.LightGray,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    } else {
-                        // Display the real data
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            items(todayClasses) { event ->
-                                RealClassListItem(event)
-                            }
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        items(5) { index ->
+                            ClassListItem(index)
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // 6 Buttons Section (Fixed at bottom)
                 val gridItems = listOf(
                     Triple("Currency\nConversion", Icons.Default.AccountBalanceWallet, "currency_screen"),
                     Triple("Campus\nMap", Icons.Default.LocationOn, "map"),
                     Triple("My\nSchedule", Icons.Default.DateRange, "schedule_screen"),
                     Triple("Exchange\nChecklist", Icons.Default.FormatListBulleted, "checklist_screen"),
                     Triple("Class\nList", Icons.Default.ListAlt, "classlist_screen"),
-                    Triple("Quick\nLinks", Icons.Default.Link, "links_screen")
+                    Triple("Quick\nLinks", Icons.Default.Link, Screen.QuickLinks.route)
                 )
 
                 LazyVerticalGrid(
@@ -216,16 +143,12 @@ fun HomeScreen(
 }
 
 @Composable
-fun RealClassListItem(event: ScheduleEvent) {
-    val icons = listOf(
-        Icons.Default.Stars,
-        Icons.Default.Thunderstorm,
-        Icons.Default.Notes,
-        Icons.Default.Train,
-        Icons.Default.List,
-        Icons.Default.School
-    )
-    val displayIcon = icons.getOrElse(event.iconIndex) { Icons.Default.School }
+fun ClassListItem(index: Int) {
+    val titles = listOf("Mobile Applications", "Class 2", "Class 3", "Class 4", "Class 5")
+    val rooms = listOf("4.0.G01", "1.0.D01", "4.0.D04", "7.0.D06", "1.0.D01")
+    val times = listOf("9:00 h", "11:00 h", "13:00 h", "15:00 h", "17:00 h")
+    val colors = listOf(Color(0xFF3022A6), Color(0xFFFF4D4D), Color(0xFF2196F3), Color(0xFFFFB300), Color(0xFF4DB6AC))
+    val icons = listOf(Icons.Default.WaterDrop, Icons.Default.ConfirmationNumber, Icons.Default.PushPin, Icons.Default.Dashboard, Icons.Default.CalendarToday)
 
     Column {
         Row(
@@ -234,19 +157,13 @@ fun RealClassListItem(event: ScheduleEvent) {
                 .padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon Background using the color saved in Firebase
             Surface(
                 modifier = Modifier.size(44.dp),
                 shape = RoundedCornerShape(12.dp),
-                color = Color(event.color)
+                color = colors[index % colors.size]
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        displayIcon,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Icon(icons[index % icons.size], contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                 }
             }
 
@@ -254,20 +171,20 @@ fun RealClassListItem(event: ScheduleEvent) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    event.name,
+                    titles[index % titles.size],
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyLarge,
                     color = Color(0xFF333333)
                 )
                 Text(
-                    event.location,
+                    rooms[index % rooms.size],
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
             }
 
             Text(
-                event.time,
+                times[index % times.size],
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF3022A6),
                 style = MaterialTheme.typography.bodyMedium

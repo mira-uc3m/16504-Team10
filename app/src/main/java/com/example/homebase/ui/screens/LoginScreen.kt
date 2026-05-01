@@ -1,6 +1,7 @@
 package com.example.homebase.ui.screens
 
 import com.example.homebase.data.view.AuthViewModel
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,10 +10,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.homebase.R
 
 @Composable
 fun LoginScreen(
@@ -35,12 +38,25 @@ fun LoginScreen(
         ) {
             // Header Area
             Spacer(modifier = Modifier.height(80.dp))
-            Text(
-                text = "HOME BASE",
-                color = Color.White,
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold
-            )
+            
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_homebase_logo_white),
+                    contentDescription = "HomeBase Logo",
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "HOME BASE",
+                    color = Color.White,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
             Text(
                 text = "Your Exchange Companion",
                 color = Color.White.copy(alpha = 0.7f),
@@ -97,9 +113,9 @@ fun LoginScreen(
                         )
                     )
 
-                    if (errorMessage != null) {
+                    errorMessage?.let { message ->
                         Text(
-                            text = errorMessage!!, 
+                            text = message,
                             color = MaterialTheme.colorScheme.error,
                             modifier = Modifier.padding(top = 8.dp)
                         )
