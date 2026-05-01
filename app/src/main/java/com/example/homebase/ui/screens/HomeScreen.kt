@@ -77,9 +77,8 @@ fun HomeScreen(navController: NavHostController) {
                 )
             )
         },
-        containerColor = Color(0xFF3022A6) // Blue only visible behind the rounded top
+        containerColor = Color(0xFF3022A6)
     ) { paddingValues ->
-        // Main content area with rounded top corners
         Surface(
             modifier = Modifier
                 .padding(top = paddingValues.calculateTopPadding()) // Only pad the top
@@ -115,7 +114,6 @@ fun HomeScreen(navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 6 Buttons Section
                 val gridItems = listOf(
                     Triple("Currency\nConversion", Icons.Default.AccountBalanceWallet, "currency_screen"),
                     Triple("Campus\nMap", Icons.Default.LocationOn, "map"),
