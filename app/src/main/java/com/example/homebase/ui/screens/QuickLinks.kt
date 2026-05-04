@@ -59,7 +59,7 @@ fun QuickLinksScreen(navController: NavHostController) {
     ) { paddingValues ->
         Surface(
             modifier = Modifier
-                .padding(paddingValues)
+                .padding(top = paddingValues.calculateTopPadding())
                 .fillMaxSize(),
             color = Color.White,
             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
