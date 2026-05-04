@@ -48,6 +48,9 @@ fun AppNavGraph(navController: NavHostController) {
         composable(route = "map") {
             MapScreen(navController)
         }
+        composable(route = Screen.Notifications.route) {
+            NotificationsScreen(navController)
+        }
         composable(route = "links_screen") {
             QuickLinksScreen(navController)
         }
