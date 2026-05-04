@@ -11,6 +11,7 @@ import com.example.homebase.ui.screens.HomeScreen
 import com.example.homebase.ui.screens.ScheduleScreen
 import com.example.homebase.ui.screens.SettingsScreen
 import com.example.homebase.ui.screens.MapScreen
+import com.example.homebase.ui.screens.QuickLinksScreen
 import com.example.homebase.ui.screens.ClassListScreen
 import com.example.homebase.ui.screens.ChecklistScreen
 import com.example.homebase.ui.screens.NotificationsScreen
@@ -47,8 +48,11 @@ fun AppNavGraph(navController: NavHostController) {
         composable(route = "map") {
             MapScreen(navController)
         }
-        composable(Screen.Notifications.route) {
+        composable(route = Screen.Notifications.route) {
             NotificationsScreen(navController)
+        }
+        composable(route = "links_screen") {
+            QuickLinksScreen(navController)
         }
         composable(route = "classlist_screen") {
             ClassListScreen(navController)
