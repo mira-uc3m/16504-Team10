@@ -112,9 +112,9 @@ fun SettingsScreen(
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
-                SettingsSwitchItem("Allow Push Notifications", viewModel.pushNotifications) { viewModel.pushNotifications = it }
-                SettingsSwitchItem("Class Reminders", viewModel.classReminders) { viewModel.classReminders = it }
-                SettingsSwitchItem("Checklist Reminders", viewModel.checklistReminders) { viewModel.checklistReminders = it }
+                SettingsSwitchItem("Allow Push Notifications", viewModel.pushNotifications) { viewModel.togglePushNotifications(it) }
+                SettingsSwitchItem("Class Reminders", viewModel.classReminders) { viewModel.toggleClassReminders(it) }
+                SettingsSwitchItem("Checklist Reminders", viewModel.checklistReminders) { viewModel.toggleChecklistReminders(it) }
 
                 Spacer(modifier = Modifier.height(16.dp))
                 HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
@@ -126,7 +126,7 @@ fun SettingsScreen(
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
-                SettingsSwitchItem("Enable location tracking", viewModel.locationTrackingEnabled) { viewModel.locationTrackingEnabled = it }
+                SettingsSwitchItem("Enable location tracking", viewModel.locationTrackingEnabled) { viewModel.toggleLocationTracking(it) }
 
                 Spacer(modifier = Modifier.height(32.dp))
                 

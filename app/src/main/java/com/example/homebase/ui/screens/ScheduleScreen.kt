@@ -230,7 +230,12 @@ fun CalendarSection(viewModel: ScheduleViewModel) {
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .padding(vertical = 16.dp, horizontal = 32.dp) // Added internal horizontal padding to fix aspect ratio
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -241,7 +246,7 @@ fun CalendarSection(viewModel: ScheduleViewModel) {
                 }
 
                 Text(
-                    text = "${currentMonth.month.name.lowercase().capitalize()} ${currentMonth.year}",
+                    text = "${currentMonth.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${currentMonth.year}",
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium
                 )
@@ -260,7 +265,7 @@ fun CalendarSection(viewModel: ScheduleViewModel) {
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(7),
-                modifier = Modifier.height(220.dp).padding(top = 8.dp),
+                modifier = Modifier.height(280.dp).padding(top = 8.dp),
                 userScrollEnabled = false
             ) {
                 items(firstDayOfWeekIndex) { Spacer(modifier = Modifier.size(32.dp)) }

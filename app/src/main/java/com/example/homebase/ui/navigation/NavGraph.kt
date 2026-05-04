@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.homebase.data.view.ScheduleViewModel
+import com.example.homebase.data.view.SettingsViewModel
 import com.example.homebase.ui.screens.AddScheduleScreen
 import com.example.homebase.ui.screens.CurrencyScreen
 import com.example.homebase.ui.screens.HomeScreen
@@ -19,6 +20,7 @@ import com.example.homebase.ui.screens.NotificationsScreen
 @Composable
 fun AppNavGraph(navController: NavHostController) {
     val scheduleViewModel: ScheduleViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    val settingsViewModel: SettingsViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 
     NavHost(
         navController = navController,
@@ -28,7 +30,7 @@ fun AppNavGraph(navController: NavHostController) {
             HomeScreen(navController, viewModel = scheduleViewModel)
         }
         composable(Screen.Settings.route) {
-            SettingsScreen(navController)
+            SettingsScreen(navController, viewModel = settingsViewModel)
         }
         composable(route = "currency_screen") {
             CurrencyScreen(navController = navController)
@@ -46,7 +48,7 @@ fun AppNavGraph(navController: NavHostController) {
             )
         }
         composable(route = "map") {
-            MapScreen(navController)
+            MapScreen(navController, settingsViewModel = settingsViewModel)
         }
         composable(route = Screen.Notifications.route) {
             NotificationsScreen(navController)
