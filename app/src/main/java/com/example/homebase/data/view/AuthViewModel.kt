@@ -6,14 +6,16 @@ import com.google.firebase.auth.FirebaseAuth
 class AuthViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
 
-    fun signUp(email: String, pass: String, onSuccess: () -> Unit) {
+    fun signUp(email: String, pass: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
         auth.createUserWithEmailAndPassword(email, pass)
             .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { e -> onFailure(e.message ?: "Registration failed") }
     }
 
-    fun login(email: String, pass: String, onSuccess: () -> Unit) {
+    fun login(email: String, pass: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
         auth.signInWithEmailAndPassword(email, pass)
             .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { e -> onFailure(e.message ?: "Login failed") }
     }
 
     fun logout(onSuccess: () -> Unit) {
