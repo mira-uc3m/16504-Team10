@@ -46,7 +46,8 @@ class NotificationHelper(private val context: Context) {
     fun scheduleExactAlarm(event: ScheduleEvent) {
         try {
             val eventDateTime = parseEventDateTime(event)
-            val triggerTime = eventDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            // Trigger 5 minutes before class
+            val triggerTime = eventDateTime.minusMinutes(5).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
             if (triggerTime <= System.currentTimeMillis()) return
 
