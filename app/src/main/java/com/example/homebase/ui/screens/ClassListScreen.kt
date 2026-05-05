@@ -44,17 +44,22 @@ fun ClassListScreen(
 
     var currentPage by remember { mutableStateOf(0) }
     
+    // Calculate current date and Mondays for the next 4 weeks
     val today = LocalDate.now()
     val currentMonday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-    val nextMonday = currentMonday.plusWeeks(1)
     
     val dayFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.ENGLISH)
     val weekRangeFormatter = DateTimeFormatter.ofPattern("MMMM d", Locale.ENGLISH)
 
-    val week1Range = "${currentMonday.format(weekRangeFormatter)} - ${currentMonday.plusDays(6).format(weekRangeFormatter)}"
-    val week2Range = "${nextMonday.format(weekRangeFormatter)} - ${nextMonday.plusDays(6).format(weekRangeFormatter)}"
-    val weeks = listOf("Week 1: $week1Range", "Week 2: $week2Range")
+    // Generate week titles for 4 weeks
+    val weeks = (0..3).map { i ->
+        val monday = currentMonday.plusWeeks(i.toLong())
+        val sunday = monday.plusDays(6)
+        val range = "${monday.format(weekRangeFormatter)} - ${sunday.format(weekRangeFormatter)}"
+        "Week ${i + 1}: $range"
+    }
 
+    // Dynamic data generation logic from ViewModel
     fun getWeekData(startMonday: LocalDate): Map<String, List<ScheduleEvent>> {
         val data = linkedMapOf<String, List<ScheduleEvent>>()
         
@@ -74,10 +79,8 @@ fun ClassListScreen(
         return data
     }
 
-    val week1Data = getWeekData(currentMonday)
-    val week2Data = getWeekData(nextMonday)
-
-    val currentData = if (currentPage == 0) week1Data else week2Data
+    // Get data for the currently selected week (0-3)
+    val currentData = getWeekData(currentMonday.plusWeeks(currentPage.toLong()))
 
     Scaffold(
         topBar = {
@@ -154,9 +157,10 @@ fun ClassListScreen(
 
             HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.3f))
 
-            if (currentData.isEmpty() && currentPage == 0) {
+            if (currentData.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp), contentAlignment = Alignment.Center) {
-                    Text("No more classes this week!", color = Color.Gray, fontSize = 16.sp)
+                    val message = if (currentPage == 0) "No more classes this week!" else "No classes scheduled for this week."
+                    Text(message, color = Color.Gray, fontSize = 16.sp)
                 }
             } else {
                 LazyColumn(
