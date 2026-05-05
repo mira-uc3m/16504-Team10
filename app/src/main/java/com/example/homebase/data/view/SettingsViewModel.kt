@@ -15,6 +15,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     var checklistReminders by mutableStateOf(sharedPreferences.getBoolean("checklist_reminders", true))
     var locationTrackingEnabled by mutableStateOf(sharedPreferences.getBoolean("location_tracking", false))
 
+    var region by mutableStateOf(sharedPreferences.getString("region", "Canada 🇨🇦") ?: "Canada 🇨🇦")
+    var language by mutableStateOf(sharedPreferences.getString("language", "English") ?: "English")
+    var currency by mutableStateOf(sharedPreferences.getString("currency", "CAD") ?: "CAD")
+
     fun togglePushNotifications(enabled: Boolean) {
         pushNotifications = enabled
         sharedPreferences.edit().putBoolean("push_notifications", enabled).apply()
@@ -33,5 +37,20 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun toggleLocationTracking(enabled: Boolean) {
         locationTrackingEnabled = enabled
         sharedPreferences.edit().putBoolean("location_tracking", enabled).apply()
+    }
+
+    fun updateRegion(newRegion: String) {
+        region = newRegion
+        sharedPreferences.edit().putString("region", newRegion).apply()
+    }
+
+    fun updateLanguage(newLanguage: String) {
+        language = newLanguage
+        sharedPreferences.edit().putString("language", newLanguage).apply()
+    }
+
+    fun updateCurrency(newCurrency: String) {
+        currency = newCurrency
+        sharedPreferences.edit().putString("currency", newCurrency).apply()
     }
 }

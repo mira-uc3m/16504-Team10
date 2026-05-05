@@ -98,9 +98,26 @@ fun SettingsScreen(
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
-                SettingsDropdownItem(label = "Region", value = "Canada 🇨🇦")
-                SettingsDropdownItem(label = "Language", value = "English")
-                SettingsDropdownItem(label = "Preferred Currency", value = "CAD")
+                SettingsDropdownItem(
+                    label = "Region", 
+                    selectedValue = viewModel.region,
+                    options = listOf("Canada 🇨🇦", "Spain 🇪🇸", "USA 🇺🇸", "UK 🇬🇧", "Germany 🇩🇪", "France 🇫🇷"),
+                    onOptionSelected = { viewModel.updateRegion(it) }
+                )
+                
+                SettingsDropdownItem(
+                    label = "Language", 
+                    selectedValue = viewModel.language,
+                    options = listOf("English", "Spanish", "French", "German", "Chinese"),
+                    onOptionSelected = { viewModel.updateLanguage(it) }
+                )
+                
+                SettingsDropdownItem(
+                    label = "Preferred Currency", 
+                    selectedValue = viewModel.currency,
+                    options = listOf("CAD", "EUR", "USD", "GBP", "JPY"),
+                    onOptionSelected = { viewModel.updateCurrency(it) }
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
                 HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
@@ -154,23 +171,57 @@ fun SettingsScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsDropdownItem(label: String, value: String) {
+fun SettingsDropdownItem(
+    label: String, 
+    selectedValue: String,
+    options: List<String>,
+    onOptionSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
         Text(label, fontSize = 12.sp, color = Color.Gray)
-        Card(
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            shape = RoundedCornerShape(8.dp),
-            border = BorderStroke(1.dp, Color.LightGray)
+        
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded },
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Row(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .menuAnchor(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, Color.LightGray)
             ) {
-                Text(value, color = Color.Black)
-                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color(0xFF3022A6))
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(selectedValue, color = Color.Black)
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                }
+            }
+
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(Color.White)
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            onOptionSelected(option)
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
     }
