@@ -19,7 +19,10 @@ import com.example.homebase.data.model.DateEntry
 import com.example.homebase.data.view.AddScheduleViewModel
 import com.example.homebase.data.view.ScheduleViewModel
 import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.util.UUID
+import java.util.Locale
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.rememberDatePickerState
@@ -269,7 +272,12 @@ fun DateRowItem(
             }
             IconButton(onClick = onDelete) { Icon(Icons.Default.Close, null) }
             Surface(onClick = { showTimePicker = true }, shape = RoundedCornerShape(20.dp), color = Color(0xFFF0F0F0)) {
-                Text(entry.time, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+                val displayTime = try {
+                    LocalTime.parse(entry.time).format(DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH))
+                } catch (e: Exception) {
+                    entry.time
+                }
+                Text(displayTime, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
             }
         }
 

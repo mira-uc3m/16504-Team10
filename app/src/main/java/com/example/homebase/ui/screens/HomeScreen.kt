@@ -29,6 +29,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.example.homebase.data.model.ScheduleEvent
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -223,6 +225,21 @@ fun RealClassListItem(event: ScheduleEvent) {
     )
     val displayIcon = icons.getOrElse(event.iconIndex) { Icons.Default.School }
 
+    // Format time for display (Standardize to 12-hour format)
+    val displayTime = try {
+        // Try parsing as 24-hour first
+        val time = LocalTime.parse(event.time)
+        time.format(DateTimeFormatter.ofPattern("hh:mm a"))
+    } catch (e: Exception) {
+        try {
+            // Try parsing as 12-hour AM/PM if 24-hour fails (legacy data)
+            val legacyFormatter = DateTimeFormatter.ofPattern("hh:mm a")
+            LocalTime.parse(event.time, legacyFormatter).format(legacyFormatter)
+        } catch (e2: Exception) {
+            event.time // Fallback
+        }
+    }
+
     Column {
         Row(
             modifier = Modifier
@@ -263,7 +280,7 @@ fun RealClassListItem(event: ScheduleEvent) {
             }
 
             Text(
-                event.time,
+                displayTime,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF3022A6),
                 style = MaterialTheme.typography.bodyMedium

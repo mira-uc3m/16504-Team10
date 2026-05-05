@@ -8,9 +8,13 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 
 class NotificationRepository {
     private val db = FirebaseFirestore.getInstance()
@@ -62,10 +66,17 @@ class NotificationRepository {
 
     fun createNotificationFromEvent(event: ScheduleEvent, userId: String): Notification? {
         return try {
-            val eventDateTime = LocalDateTime.parse("${event.date}T${event.time}:00")
+            val eventDate = LocalDate.parse(event.date)
+            val eventTime = try {
+                LocalTime.parse(event.time)
+            } catch (e: Exception) {
+                // Legacy fallback for AM/PM format
+                LocalTime.parse(event.time, DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH))
+            }
+            
+            val eventDateTime = LocalDateTime.of(eventDate, eventTime)
             val now = LocalDateTime.now()
             
-            // Only create if event is in the future or very recent
             if (eventDateTime.isAfter(now.minusHours(1))) {
                 val minutesUntil = ChronoUnit.MINUTES.between(now, eventDateTime)
                 
@@ -75,11 +86,14 @@ class NotificationRepository {
                     else -> "Upcoming"
                 }
 
+                // Standardize display time to 12-hour format
+                val displayTime = eventDateTime.format(DateTimeFormatter.ofPattern("MMM dd, hh:mm a", Locale.ENGLISH))
+
                 Notification(
                     id = "notif_${event.id}",
                     userId = userId,
                     title = event.name,
-                    time = "${event.date} - ${event.time}h",
+                    time = displayTime,
                     status = status,
                     room = event.location,
                     timestamp = eventDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
