@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -314,12 +313,6 @@ fun ChecklistCard(
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (isChecked) Color.Gray else Color(0xFF333333),
                 fontWeight = if (isChecked) FontWeight.Normal else FontWeight.Medium
-            )
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = Color.LightGray,
-                modifier = Modifier.size(20.dp)
             )
         }
     }
