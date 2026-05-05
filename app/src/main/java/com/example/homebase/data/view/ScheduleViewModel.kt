@@ -1,15 +1,17 @@
 package com.example.homebase.data.view
 
+import android.app.Application
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.homebase.data.model.ScheduleEvent
 import com.example.homebase.data.repository.NotificationRepository
 import com.example.homebase.data.repository.ScheduleRepository
+import com.example.homebase.notifications.NotificationHelper
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -17,10 +19,12 @@ import java.time.YearMonth
 import java.time.DayOfWeek
 import java.time.temporal.TemporalAdjusters
 
-class ScheduleViewModel(
-    private val repository: ScheduleRepository = ScheduleRepository(),
+class ScheduleViewModel(application: Application) : AndroidViewModel(application) {
+    
+    private val repository: ScheduleRepository = ScheduleRepository()
     private val notificationRepository: NotificationRepository = NotificationRepository()
-) : ViewModel() {
+    private val notificationHelper = NotificationHelper(application)
+    
     var selectedDate by mutableStateOf(LocalDate.now())
     var currentMonth by mutableStateOf(YearMonth.now())
 
@@ -198,6 +202,8 @@ class ScheduleViewModel(
             )
         )
         allActivities.addAll(mockEvents)
+        // Schedule alarms for mock data
+        mockEvents.forEach { notificationHelper.scheduleExactAlarm(it) }
     }
 
     fun fetchScheduleFromFirebase() {
@@ -209,6 +215,7 @@ class ScheduleViewModel(
                 events.forEach { event ->
                     if (allActivities.none { it.id == event.id }) {
                         allActivities.add(event)
+                        notificationHelper.scheduleExactAlarm(event)
                     }
                 }
                 isLoading.value = false
@@ -222,6 +229,7 @@ class ScheduleViewModel(
             events.forEach { event ->
                 val success = repository.postEvent(event)
                 if (success) {
+                    notificationHelper.scheduleExactAlarm(event)
                     val notification = notificationRepository.createNotificationFromEvent(event, uid)
                     notification?.let {
                         notificationRepository.postNotification(it)
@@ -236,9 +244,11 @@ class ScheduleViewModel(
         viewModelScope.launch {
             val success = repository.deleteEvent(event.id)
             if (success) {
+                notificationHelper.cancelAlarm(event)
                 notificationRepository.deleteNotificationByEventId(event.id)
                 fetchScheduleFromFirebase()
             } else if (event.id.startsWith("mock")) {
+                notificationHelper.cancelAlarm(event)
                 allActivities.remove(event)
             }
         }
@@ -261,10 +271,12 @@ class ScheduleViewModel(
                     val updatedEvent = event.copy(date = newStartDate.toString())
                     if (!event.id.startsWith("mock")) {
                         repository.postEvent(updatedEvent)
+                        notificationHelper.scheduleExactAlarm(updatedEvent)
                         fetchScheduleFromFirebase()
                     } else {
                         allActivities.remove(event)
                         allActivities.add(updatedEvent)
+                        notificationHelper.scheduleExactAlarm(updatedEvent)
                     }
                 }
             } else {
@@ -279,9 +291,11 @@ class ScheduleViewModel(
                 
                 if (!event.id.startsWith("mock")) {
                     repository.postEvent(updatedOriginal)
+                    notificationHelper.scheduleExactAlarm(updatedOriginal)
                 } else {
                     allActivities.remove(event)
                     allActivities.add(updatedOriginal)
+                    notificationHelper.scheduleExactAlarm(updatedOriginal)
                 }
 
                 if (event.endDate == null || afterStartDate.isBefore(LocalDate.parse(event.endDate).plusDays(1))) {
@@ -291,8 +305,10 @@ class ScheduleViewModel(
                     )
                     if (!event.id.startsWith("mock")) {
                         repository.postEvent(newEvent)
+                        notificationHelper.scheduleExactAlarm(newEvent)
                     } else {
                         allActivities.add(newEvent)
+                        notificationHelper.scheduleExactAlarm(newEvent)
                     }
                 }
                 
