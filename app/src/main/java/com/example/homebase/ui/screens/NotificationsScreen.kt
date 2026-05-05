@@ -1,5 +1,6 @@
 package com.example.homebase.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -135,12 +136,13 @@ fun NotificationsScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(notifications) { notification ->
+                        items(notifications, key = { it.id }) { notification ->
                             NotificationItem(
                                 title = notification.title,
                                 time = notification.time,
                                 status = notification.status,
-                                room = notification.room
+                                room = notification.room,
+                                onDismiss = { viewModel.dismissNotification(notification.id) }
                             )
                         }
                     }
@@ -151,7 +153,13 @@ fun NotificationsScreen(
 }
 
 @Composable
-fun NotificationItem(title: String, time: String, status: String, room: String) {
+fun NotificationItem(
+    title: String,
+    time: String,
+    status: String,
+    room: String,
+    onDismiss: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FF)),
@@ -181,7 +189,10 @@ fun NotificationItem(title: String, time: String, status: String, room: String) 
                         Icons.Default.Close,
                         contentDescription = "Dismiss",
                         tint = Color.Gray,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable { onDismiss() }
+                            .padding(4.dp)
                     )
                 }
             }

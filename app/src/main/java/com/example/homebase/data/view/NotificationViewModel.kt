@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -34,9 +35,31 @@ class NotificationViewModel(
     private fun fetchNotifications() {
         val uid = currentUserId ?: return
         viewModelScope.launch {
-            repository.getNotificationsFlow(uid).collect {
-                _notifications.value = it.map { notif -> updateNotificationStatus(notif) }
+            repository.getNotificationsFlow(uid).collect { list ->
+                val now = LocalDate.now()
+                val filteredList = list.filter { notif ->
+                    val notifDate = LocalDateTime.ofInstant(
+                        Instant.ofEpochMilli(notif.timestamp),
+                        ZoneId.systemDefault()
+                    ).toLocalDate()
+                    
+                    val isPastDay = notifDate.isBefore(now)
+                    if (isPastDay) {
+                        // Automatically dismiss notifications from previous days
+                        viewModelScope.launch {
+                            repository.deleteNotification(notif.id)
+                        }
+                    }
+                    !isPastDay
+                }
+                _notifications.value = filteredList.map { updateNotificationStatus(it) }
             }
+        }
+    }
+
+    fun dismissNotification(notificationId: String) {
+        viewModelScope.launch {
+            repository.deleteNotification(notificationId)
         }
     }
 
