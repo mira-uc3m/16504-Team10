@@ -27,6 +27,7 @@ import com.example.homebase.data.model.ScheduleEvent
 import com.example.homebase.data.view.ScheduleViewModel
 import com.example.homebase.ui.navigation.Screen
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import androidx.navigation.NavController
 
@@ -166,6 +167,15 @@ fun ActivityListSection(navController: NavController, viewModel: ScheduleViewMod
         ) {
             items(viewModel.filteredActivities) { activity ->
                 val displayIcon = icons.getOrElse(activity.iconIndex) { Icons.Default.School }
+                
+                // Format time for display (Standardize to 12-hour format)
+                val displayTime = try {
+                    val time = LocalTime.parse(activity.time)
+                    time.format(DateTimeFormatter.ofPattern("hh:mm a"))
+                } catch (e: Exception) {
+                    activity.time // Fallback to raw string if parsing fails
+                }
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -197,7 +207,7 @@ fun ActivityListSection(navController: NavController, viewModel: ScheduleViewMod
                         Text(activity.name, fontWeight = FontWeight.Bold)
                         Text(activity.location, color = Color.Gray, fontSize = 12.sp)
                     }
-                    Text(activity.time, fontWeight = FontWeight.Bold, color = Color(0xFF3022A6))
+                    Text(displayTime, fontWeight = FontWeight.Bold, color = Color(0xFF3022A6))
                 }
                 HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFF0F0F0))
             }

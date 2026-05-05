@@ -12,8 +12,10 @@ import com.example.homebase.MainActivity
 import com.example.homebase.R
 import com.example.homebase.data.model.ScheduleEvent
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 class NotificationHelper(private val context: Context) {
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -100,9 +102,14 @@ class NotificationHelper(private val context: Context) {
     }
 
     private fun parseEventDateTime(event: ScheduleEvent): LocalDateTime {
-        // Assuming time is in "HH:mm AM/PM" format based on mock data
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a")
-        return LocalDateTime.parse("${event.date} ${event.time}", formatter)
+        val date = java.time.LocalDate.parse(event.date)
+        val time = try {
+            LocalTime.parse(event.time)
+        } catch (e: Exception) {
+            // Robust parsing to handle legacy AM/PM strings
+            LocalTime.parse(event.time, DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH))
+        }
+        return LocalDateTime.of(date, time)
     }
 
     fun showNotification(title: String, message: String) {
@@ -115,7 +122,7 @@ class NotificationHelper(private val context: Context) {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info) // Using system icon for now
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
