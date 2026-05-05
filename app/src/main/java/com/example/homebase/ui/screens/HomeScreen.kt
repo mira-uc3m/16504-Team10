@@ -79,22 +79,14 @@ fun HomeScreen(
                     }
                 },
                 navigationIcon = {
-                    Surface(
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_homebase_logo),
+                        contentDescription = "Home Logo",
+                        tint = Color.Unspecified,
                         modifier = Modifier
                             .padding(start = 16.dp)
-                            .size(36.dp),
-                        shape = RoundedCornerShape(4.dp),
-                        color = Color.White
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_homebase_logo),
-                                contentDescription = "Home Logo",
-                                tint = Color.Unspecified,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
+                            .size(36.dp)
+                    )
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color(0xFF3022A6)

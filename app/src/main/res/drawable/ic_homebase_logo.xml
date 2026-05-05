@@ -3,20 +3,19 @@
     android:height="108dp"
     android:viewportWidth="100"
     android:viewportHeight="100">
-    <!-- White Square (Base) with a teeny tiny border -->
+    <!-- White Square (Base) -->
     <path
         android:fillColor="#FFFFFF"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="1"
-        android:pathData="M1,1 h98 v98 h-98 z" />
+        android:pathData="M0,0 h100 v100 h-100 z" />
 
-    <!-- Blue House Shape (Aligned to Bottom-Right with a tiny gap) -->
+    <!-- Blue House Shape (Bottom-Right aligned with teeny tiny gap) -->
+    <!-- Base from x=25 to x=99, Peak at (70, 52), Right shoulder at (99, 70) -->
     <path
         android:fillColor="#3022A6"
-        android:pathData="M22,97 L70,49 L97,73 V97 H22 Z" />
+        android:pathData="M25,99 L70,52 L99,70 V99 H25 Z" />
 
     <!-- 2x2 White Window Grid -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M75,79 h8 v8 h-8 z M85,79 h8 v8 h-8 z M75,88 h8 v8 h-8 z M85,88 h8 v8 h-8 z" />
+        android:pathData="M80,80 h8 v8 h-8 z M89,80 h8 v8 h-8 z M80,89 h8 v8 h-8 z M89,89 h8 v8 h-8 z" />
 </vector>
