@@ -21,6 +21,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
+import java.util.Locale
 
 data class UC3MClass(
     val name: String,
@@ -33,55 +38,87 @@ data class UC3MClass(
 @Composable
 fun ClassListScreen(navController: NavHostController) {
     var currentPage by remember { mutableStateOf(0) }
-    val weeks = listOf("Week 1: April 13 - April 19", "Week 2: April 20 - April 26")
+    
+    // Calculate current week and next week dates
+    val today = LocalDate.now()
+    val currentMonday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    val nextMonday = currentMonday.plusWeeks(1)
+    
+    val dayFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.ENGLISH)
+    val weekRangeFormatter = DateTimeFormatter.ofPattern("MMMM d", Locale.ENGLISH)
 
-    val week1Data = mapOf(
-        "Monday, April 13" to listOf(
-            UC3MClass("Mobile Applications", "53461", Icons.Default.WaterDrop, Color(0xFF3022A6)),
-            UC3MClass("Computer Architecture", "12345", Icons.Default.ConfirmationNumber, Color(0xFFFF4D4D)),
-            UC3MClass("Operating Systems", "67890", Icons.Default.PushPin, Color(0xFF2196F3))
-        ),
-        "Tuesday, April 14" to listOf(
-            UC3MClass("Software Engineering", "11111", Icons.Default.Dashboard, Color(0xFFFFB300)),
-            UC3MClass("Database Systems", "22222", Icons.Default.CalendarToday, Color(0xFF4DB6AC)),
-            UC3MClass("Mobile Applications", "53461", Icons.Default.WaterDrop, Color(0xFF3022A6))
-        ),
-        "Wednesday, April 15" to listOf(
-            UC3MClass("Software Engineering", "11111", Icons.Default.Dashboard, Color(0xFFFFB300)),
-            UC3MClass("Computer Architecture", "12345", Icons.Default.ConfirmationNumber, Color(0xFFFF4D4D)),
-            UC3MClass("Operating Systems", "67890", Icons.Default.PushPin, Color(0xFF2196F3))
-        ),
-        "Thursday, April 16" to listOf(
-            UC3MClass("Mobile Applications", "53461", Icons.Default.WaterDrop, Color(0xFF3022A6)),
-            UC3MClass("Network Security", "99999", Icons.Default.Security, Color(0xFF9C27B0))
-        ),
-        "Friday, April 17" to listOf(
-            UC3MClass("Database Systems", "22222", Icons.Default.CalendarToday, Color(0xFF4DB6AC)),
-            UC3MClass("Project Management", "88888", Icons.Default.Assignment, Color(0xFF795548))
-        )
-    )
+    val week1Range = "${currentMonday.format(weekRangeFormatter)} - ${currentMonday.plusDays(6).format(weekRangeFormatter)}"
+    val week2Range = "${nextMonday.format(weekRangeFormatter)} - ${nextMonday.plusDays(6).format(weekRangeFormatter)}"
+    val weeks = listOf("Week 1: $week1Range", "Week 2: $week2Range")
 
-    val week2Data = mapOf(
-        "Monday, April 20" to listOf(
-            UC3MClass("Mobile Applications", "53461", Icons.Default.WaterDrop, Color(0xFF3022A6)),
-            UC3MClass("Computer Architecture", "12345", Icons.Default.ConfirmationNumber, Color(0xFFFF4D4D))
-        ),
-        "Tuesday, April 21" to listOf(
-            UC3MClass("Software Engineering", "11111", Icons.Default.Dashboard, Color(0xFFFFB300)),
-            UC3MClass("Database Systems", "22222", Icons.Default.CalendarToday, Color(0xFF4DB6AC))
-        ),
-        "Wednesday, April 22" to listOf(
-            UC3MClass("Operating Systems", "67890", Icons.Default.PushPin, Color(0xFF2196F3)),
-            UC3MClass("Software Engineering", "11111", Icons.Default.Dashboard, Color(0xFFFFB300))
-        ),
-        "Thursday, April 23" to listOf(
-            UC3MClass("Network Security", "99999", Icons.Default.Security, Color(0xFF9C27B0)),
-            UC3MClass("Mobile Applications", "53461", Icons.Default.WaterDrop, Color(0xFF3022A6))
-        ),
-        "Friday, April 24" to listOf(
-            UC3MClass("Project Management", "88888", Icons.Default.Assignment, Color(0xFF795548))
+    // Dynamic data generation logic
+    fun getWeekData(startMonday: LocalDate, isWeek1: Boolean): Map<String, List<UC3MClass>> {
+        val data = linkedMapOf<String, List<UC3MClass>>()
+        
+        // Base schedules for Week A and Week B (Week 1 and Week 2)
+        val schedule1 = listOf(
+            listOf( // Monday
+                UC3MClass("Mobile Applications", "53461", Icons.Default.WaterDrop, Color(0xFF3022A6)),
+                UC3MClass("Computer Architecture", "12345", Icons.Default.ConfirmationNumber, Color(0xFFFF4D4D)),
+                UC3MClass("Operating Systems", "67890", Icons.Default.PushPin, Color(0xFF2196F3))
+            ),
+            listOf( // Tuesday
+                UC3MClass("Software Engineering", "11111", Icons.Default.Dashboard, Color(0xFFFFB300)),
+                UC3MClass("Database Systems", "22222", Icons.Default.CalendarToday, Color(0xFF4DB6AC)),
+                UC3MClass("Mobile Applications", "53461", Icons.Default.WaterDrop, Color(0xFF3022A6))
+            ),
+            listOf( // Wednesday
+                UC3MClass("Software Engineering", "11111", Icons.Default.Dashboard, Color(0xFFFFB300)),
+                UC3MClass("Computer Architecture", "12345", Icons.Default.ConfirmationNumber, Color(0xFFFF4D4D)),
+                UC3MClass("Operating Systems", "67890", Icons.Default.PushPin, Color(0xFF2196F3))
+            ),
+            listOf( // Thursday
+                UC3MClass("Mobile Applications", "53461", Icons.Default.WaterDrop, Color(0xFF3022A6)),
+                UC3MClass("Network Security", "99999", Icons.Default.Security, Color(0xFF9C27B0))
+            ),
+            listOf( // Friday
+                UC3MClass("Database Systems", "22222", Icons.Default.CalendarToday, Color(0xFF4DB6AC)),
+                UC3MClass("Project Management", "88888", Icons.Default.Assignment, Color(0xFF795548))
+            )
         )
-    )
+
+        val schedule2 = listOf(
+            listOf( // Monday
+                UC3MClass("Mobile Applications", "53461", Icons.Default.WaterDrop, Color(0xFF3022A6)),
+                UC3MClass("Computer Architecture", "12345", Icons.Default.ConfirmationNumber, Color(0xFFFF4D4D))
+            ),
+            listOf( // Tuesday
+                UC3MClass("Software Engineering", "11111", Icons.Default.Dashboard, Color(0xFFFFB300)),
+                UC3MClass("Database Systems", "22222", Icons.Default.CalendarToday, Color(0xFF4DB6AC))
+            ),
+            listOf( // Wednesday
+                UC3MClass("Operating Systems", "67890", Icons.Default.PushPin, Color(0xFF2196F3)),
+                UC3MClass("Software Engineering", "11111", Icons.Default.Dashboard, Color(0xFFFFB300))
+            ),
+            listOf( // Thursday
+                UC3MClass("Network Security", "99999", Icons.Default.Security, Color(0xFF9C27B0)),
+                UC3MClass("Mobile Applications", "53461", Icons.Default.WaterDrop, Color(0xFF3022A6))
+            ),
+            listOf( // Friday
+                UC3MClass("Project Management", "88888", Icons.Default.Assignment, Color(0xFF795548))
+            )
+        )
+
+        val activeSchedule = if (isWeek1) schedule1 else schedule2
+
+        for (i in 0..4) { // Iterate Monday through Friday
+            val date = startMonday.plusDays(i.toLong())
+            // Only show dates from Today onwards
+            if (!date.isBefore(today)) {
+                data[date.format(dayFormatter)] = activeSchedule[i]
+            }
+        }
+        return data
+    }
+
+    // Auto-calculate data for current week and next week based on Today
+    val week1Data = getWeekData(currentMonday, true)
+    val week2Data = getWeekData(nextMonday, false)
 
     val currentData = if (currentPage == 0) week1Data else week2Data
 
@@ -150,33 +187,39 @@ fun ClassListScreen(navController: NavHostController) {
 
             HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.3f))
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 20.dp)
-            ) {
-                currentData.forEach { (day, classes) ->
-                    item {
-                        Spacer(modifier = Modifier.height(20.dp))
-                        Text(
-                            text = day,
-                            color = Color.Gray,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.3f))
-                    }
-                    items(classes) { uc3mClass ->
-                        ClassRow(uc3mClass)
-                        HorizontalDivider(
-                            thickness = 0.5.dp,
-                            color = Color.LightGray.copy(alpha = 0.2f)
-                        )
-                    }
+            if (currentData.isEmpty() && currentPage == 0) {
+                Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+                    Text("No more classes this week!", color = Color.Gray, fontSize = 16.sp)
                 }
-                item {
-                    Spacer(modifier = Modifier.height(40.dp))
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp)
+                ) {
+                    currentData.forEach { (day, classes) ->
+                        item {
+                            Spacer(modifier = Modifier.height(20.dp))
+                            Text(
+                                text = day,
+                                color = Color.Gray,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.3f))
+                        }
+                        items(classes) { uc3mClass ->
+                            ClassRow(uc3mClass)
+                            HorizontalDivider(
+                                thickness = 0.5.dp,
+                                color = Color.LightGray.copy(alpha = 0.2f)
+                            )
+                        }
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(40.dp))
+                    }
                 }
             }
         }
