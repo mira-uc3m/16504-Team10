@@ -1,6 +1,7 @@
 package com.example.homebase.ui.screens
 
 import com.example.homebase.data.view.AuthViewModel
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,10 +10,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.homebase.R
 
 @Composable
 fun LoginScreen(
@@ -34,7 +37,19 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Header Area
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(60.dp))
+            
+            // Added Logo
+            Image(
+                painter = painterResource(id = R.drawable.ic_homebase_logo),
+                contentDescription = "Home Base Logo",
+                modifier = Modifier
+                    .size(80.dp)
+                    .padding(8.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
             Text(
                 text = "HOME BASE",
                 color = Color.White,
@@ -47,7 +62,7 @@ fun LoginScreen(
                 fontSize = 16.sp
             )
             
-            Spacer(modifier = Modifier.height(60.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
             // Login Form Area
             Surface(

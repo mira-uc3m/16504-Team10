@@ -16,9 +16,13 @@ import com.example.homebase.ui.theme.HomeBaseTheme
 import com.example.homebase.ui.screens.LoginScreen
 import com.example.homebase.data.view.AuthViewModel
 import com.google.firebase.auth.FirebaseAuth
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Handle the splash screen transition.
+        installSplashScreen()
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
