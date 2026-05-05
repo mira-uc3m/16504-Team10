@@ -16,30 +16,34 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.homebase.R
+import com.example.homebase.data.model.ScheduleEvent
+import com.example.homebase.data.view.ScheduleViewModel
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
-data class UC3MClass(
-    val name: String,
-    val code: String,
-    val icon: ImageVector,
-    val color: Color
-)
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun ClassListScreen(navController: NavHostController) {
+fun ClassListScreen(
+    navController: NavHostController,
+    viewModel: ScheduleViewModel = viewModel()
+) {
+    LaunchedEffect(Unit) {
+        viewModel.fetchScheduleFromFirebase()
+    }
+
     var currentPage by remember { mutableStateOf(0) }
     
-    // Calculate current week and next week dates
     val today = LocalDate.now()
     val currentMonday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     val nextMonday = currentMonday.plusWeeks(1)
@@ -51,74 +55,27 @@ fun ClassListScreen(navController: NavHostController) {
     val week2Range = "${nextMonday.format(weekRangeFormatter)} - ${nextMonday.plusDays(6).format(weekRangeFormatter)}"
     val weeks = listOf("Week 1: $week1Range", "Week 2: $week2Range")
 
-    // Dynamic data generation logic
-    fun getWeekData(startMonday: LocalDate, isWeek1: Boolean): Map<String, List<UC3MClass>> {
-        val data = linkedMapOf<String, List<UC3MClass>>()
+    fun getWeekData(startMonday: LocalDate): Map<String, List<ScheduleEvent>> {
+        val data = linkedMapOf<String, List<ScheduleEvent>>()
         
-        // Base schedules for Week A and Week B (Week 1 and Week 2)
-        val schedule1 = listOf(
-            listOf( // Monday
-                UC3MClass("Mobile Applications", "53461", Icons.Default.WaterDrop, Color(0xFF3022A6)),
-                UC3MClass("Computer Architecture", "12345", Icons.Default.ConfirmationNumber, Color(0xFFFF4D4D)),
-                UC3MClass("Operating Systems", "67890", Icons.Default.PushPin, Color(0xFF2196F3))
-            ),
-            listOf( // Tuesday
-                UC3MClass("Software Engineering", "11111", Icons.Default.Dashboard, Color(0xFFFFB300)),
-                UC3MClass("Database Systems", "22222", Icons.Default.CalendarToday, Color(0xFF4DB6AC)),
-                UC3MClass("Mobile Applications", "53461", Icons.Default.WaterDrop, Color(0xFF3022A6))
-            ),
-            listOf( // Wednesday
-                UC3MClass("Software Engineering", "11111", Icons.Default.Dashboard, Color(0xFFFFB300)),
-                UC3MClass("Computer Architecture", "12345", Icons.Default.ConfirmationNumber, Color(0xFFFF4D4D)),
-                UC3MClass("Operating Systems", "67890", Icons.Default.PushPin, Color(0xFF2196F3))
-            ),
-            listOf( // Thursday
-                UC3MClass("Mobile Applications", "53461", Icons.Default.WaterDrop, Color(0xFF3022A6)),
-                UC3MClass("Network Security", "99999", Icons.Default.Security, Color(0xFF9C27B0))
-            ),
-            listOf( // Friday
-                UC3MClass("Database Systems", "22222", Icons.Default.CalendarToday, Color(0xFF4DB6AC)),
-                UC3MClass("Project Management", "88888", Icons.Default.Assignment, Color(0xFF795548))
-            )
-        )
-
-        val schedule2 = listOf(
-            listOf( // Monday
-                UC3MClass("Mobile Applications", "53461", Icons.Default.WaterDrop, Color(0xFF3022A6)),
-                UC3MClass("Computer Architecture", "12345", Icons.Default.ConfirmationNumber, Color(0xFFFF4D4D))
-            ),
-            listOf( // Tuesday
-                UC3MClass("Software Engineering", "11111", Icons.Default.Dashboard, Color(0xFFFFB300)),
-                UC3MClass("Database Systems", "22222", Icons.Default.CalendarToday, Color(0xFF4DB6AC))
-            ),
-            listOf( // Wednesday
-                UC3MClass("Operating Systems", "67890", Icons.Default.PushPin, Color(0xFF2196F3)),
-                UC3MClass("Software Engineering", "11111", Icons.Default.Dashboard, Color(0xFFFFB300))
-            ),
-            listOf( // Thursday
-                UC3MClass("Network Security", "99999", Icons.Default.Security, Color(0xFF9C27B0)),
-                UC3MClass("Mobile Applications", "53461", Icons.Default.WaterDrop, Color(0xFF3022A6))
-            ),
-            listOf( // Friday
-                UC3MClass("Project Management", "88888", Icons.Default.Assignment, Color(0xFF795548))
-            )
-        )
-
-        val activeSchedule = if (isWeek1) schedule1 else schedule2
-
         for (i in 0..4) { // Iterate Monday through Friday
             val date = startMonday.plusDays(i.toLong())
             // Only show dates from Today onwards
             if (!date.isBefore(today)) {
-                data[date.format(dayFormatter)] = activeSchedule[i]
+                val dailyEvents = viewModel.allActivities.filter { 
+                    viewModel.isEventOnDate(it, date) 
+                }.sortedBy { it.time }
+                
+                if (dailyEvents.isNotEmpty()) {
+                    data[date.format(dayFormatter)] = dailyEvents
+                }
             }
         }
         return data
     }
 
-    // Auto-calculate data for current week and next week based on Today
-    val week1Data = getWeekData(currentMonday, true)
-    val week2Data = getWeekData(nextMonday, false)
+    val week1Data = getWeekData(currentMonday)
+    val week2Data = getWeekData(nextMonday)
 
     val currentData = if (currentPage == 0) week1Data else week2Data
 
@@ -142,6 +99,16 @@ fun ClassListScreen(navController: NavHostController) {
                             modifier = Modifier.size(32.dp)
                         )
                     }
+                },
+                actions = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_homebase_logo),
+                        contentDescription = "Home Logo",
+                        tint = Color.Unspecified,
+                        modifier = Modifier
+                            .padding(end = 16.dp)
+                            .size(36.dp)
+                    )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.White
@@ -188,7 +155,7 @@ fun ClassListScreen(navController: NavHostController) {
             HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.3f))
 
             if (currentData.isEmpty() && currentPage == 0) {
-                Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp), contentAlignment = Alignment.Center) {
                     Text("No more classes this week!", color = Color.Gray, fontSize = 16.sp)
                 }
             } else {
@@ -209,8 +176,8 @@ fun ClassListScreen(navController: NavHostController) {
                             Spacer(modifier = Modifier.height(8.dp))
                             HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.3f))
                         }
-                        items(classes) { uc3mClass ->
-                            ClassRow(uc3mClass)
+                        items(classes) { event ->
+                            ClassRow(event)
                             HorizontalDivider(
                                 thickness = 0.5.dp,
                                 color = Color.LightGray.copy(alpha = 0.2f)
@@ -227,7 +194,17 @@ fun ClassListScreen(navController: NavHostController) {
 }
 
 @Composable
-fun ClassRow(uc3mClass: UC3MClass) {
+fun ClassRow(event: ScheduleEvent) {
+    val icons = listOf(
+        Icons.Default.Stars,
+        Icons.Default.Thunderstorm,
+        Icons.Default.Notes,
+        Icons.Default.Train,
+        Icons.Default.List,
+        Icons.Default.School
+    )
+    val displayIcon = icons.getOrElse(event.iconIndex) { Icons.Default.School }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -237,11 +214,11 @@ fun ClassRow(uc3mClass: UC3MClass) {
         Surface(
             modifier = Modifier.size(44.dp),
             shape = RoundedCornerShape(12.dp),
-            color = uc3mClass.color
+            color = Color(event.color)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
-                    imageVector = uc3mClass.icon,
+                    imageVector = displayIcon,
                     contentDescription = null,
                     tint = Color.White,
                     modifier = Modifier.size(20.dp)
@@ -251,18 +228,25 @@ fun ClassRow(uc3mClass: UC3MClass) {
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = uc3mClass.name,
+                text = event.name,
                 fontWeight = FontWeight.Bold,
                 fontSize = 17.sp,
                 color = Color(0xFF333333)
             )
             Text(
-                text = uc3mClass.code,
+                text = event.location,
                 fontSize = 13.sp,
                 color = Color.Gray
             )
         }
+
+        Text(
+            text = event.time,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF3022A6),
+            fontSize = 14.sp
+        )
     }
 }
