@@ -5,13 +5,18 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,6 +32,27 @@ fun LoginScreen(
     var isSignUp by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    val focusManager = LocalFocusManager.current
+
+    val handleAuth = {
+        if (email.isBlank() || password.isBlank()) {
+            errorMessage = "Please fill in all fields"
+        } else {
+            errorMessage = null
+            if (isSignUp) {
+                authViewModel.signUp(email, password,
+                    onSuccess = { onLoginSuccess() },
+                    onFailure = { errorMessage = it }
+                )
+            } else {
+                authViewModel.login(email, password,
+                    onSuccess = { onLoginSuccess() },
+                    onFailure = { errorMessage = it }
+                )
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -38,7 +64,7 @@ fun LoginScreen(
         ) {
             // Header Area
             Spacer(modifier = Modifier.height(60.dp))
-            
+
             // Added Logo
             Image(
                 painter = painterResource(id = R.drawable.ic_homebase_logo),
@@ -47,9 +73,9 @@ fun LoginScreen(
                     .size(80.dp)
                     .padding(8.dp)
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Text(
                 text = "HOME BASE",
                 color = Color.White,
@@ -91,6 +117,14 @@ fun LoginScreen(
                         label = { Text("Email") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
+                        ),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF3022A6),
                             focusedLabelColor = Color(0xFF3022A6)
@@ -106,6 +140,17 @@ fun LoginScreen(
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                                handleAuth()
+                            }
+                        ),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF3022A6),
                             focusedLabelColor = Color(0xFF3022A6)
@@ -116,6 +161,7 @@ fun LoginScreen(
                         Text(
                             text = errorMessage!!, 
                             color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(top = 8.dp)
                         )
                     }
@@ -123,13 +169,7 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
-                        onClick = {
-                            if (isSignUp) {
-                                authViewModel.signUp(email, password) { onLoginSuccess() }
-                            } else {
-                                authViewModel.login(email, password) { onLoginSuccess() }
-                            }
-                        },
+                        onClick = handleAuth,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
@@ -145,7 +185,10 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    TextButton(onClick = { isSignUp = !isSignUp }) {
+                    TextButton(onClick = {
+                        isSignUp = !isSignUp
+                        errorMessage = null
+                    }) {
                         Text(
                             if (isSignUp) "Already have an account? Log in" else "Need an account? Sign up",
                             color = Color(0xFF3022A6)
