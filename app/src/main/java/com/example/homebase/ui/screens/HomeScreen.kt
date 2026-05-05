@@ -14,11 +14,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.homebase.R
 import com.example.homebase.ui.navigation.Screen
 import com.example.homebase.data.view.ScheduleViewModel
 import com.example.homebase.data.view.NotificationViewModel
@@ -84,7 +86,14 @@ fun HomeScreen(
                         shape = RoundedCornerShape(4.dp),
                         color = Color.White
                     ) {
-                        // Logo content could go here
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_homebase_logo),
+                                contentDescription = "Home Logo",
+                                tint = Color.Unspecified,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -122,7 +131,6 @@ fun HomeScreen(
         },
         containerColor = Color(0xFF3022A6)
     ) { paddingValues ->
-        // Main content area with rounded top corners
         Surface(
             modifier = Modifier
                 .padding(paddingValues)
@@ -135,7 +143,6 @@ fun HomeScreen(
                     .fillMaxSize()
                     .padding(horizontal = 20.dp, vertical = 24.dp)
             ) {
-                // Today's Classes Section (Scrollable)
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         "Today's Classes",
@@ -147,7 +154,6 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     if (todayClasses.isEmpty()) {
-                        // Empty State View
                         Column(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.Center,
@@ -172,7 +178,6 @@ fun HomeScreen(
                             )
                         }
                     } else {
-                        // Display the real data
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -186,7 +191,6 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // 6 Buttons Section (Fixed at bottom)
                 val gridItems = listOf(
                     Triple("Currency\nConversion", Icons.Default.AccountBalanceWallet, "currency_screen"),
                     Triple("Campus\nMap", Icons.Default.LocationOn, "map"),

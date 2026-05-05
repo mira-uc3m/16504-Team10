@@ -1,0 +1,22 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- White Square (Base) with a teeny tiny border -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1"
+        android:pathData="M1,1 h98 v98 h-98 z" />
+
+    <!-- Blue House Shape (Aligned to Bottom-Right with a tiny gap) -->
+    <path
+        android:fillColor="#3022A6"
+        android:pathData="M22,97 L70,49 L97,73 V97 H22 Z" />
+
+    <!-- 2x2 White Window Grid -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M75,79 h8 v8 h-8 z M85,79 h8 v8 h-8 z M75,88 h8 v8 h-8 z M85,88 h8 v8 h-8 z" />
+</vector>
