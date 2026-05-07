@@ -16,8 +16,6 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.DayOfWeek
-import java.time.temporal.TemporalAdjusters
 
 class ScheduleViewModel(application: Application) : AndroidViewModel(application) {
     
@@ -41,169 +39,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     }
 
     init {
-        addMockData()
         fetchScheduleFromFirebase()
-    }
-
-    private fun addMockData() {
-        // Set start dates to early 2025 so they show up for all weeks
-        val startDate = LocalDate.of(2025, 1, 1)
-        val monday = startDate.with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY))
-        val tuesday = monday.plusDays(1)
-        val wednesday = monday.plusDays(2)
-        val thursday = monday.plusDays(3)
-        val friday = monday.plusDays(4)
-
-        val mockEvents = listOf(
-            // Monday
-            ScheduleEvent(
-                id = "mock1",
-                name = "Mobile Applications",
-                location = "Room 402",
-                time = "09:30",
-                date = monday.toString(),
-                color = 0xFF3022A6L,
-                iconIndex = 0,
-                repeatType = "Weekly"
-            ),
-            ScheduleEvent(
-                id = "mock2",
-                name = "Operating Systems",
-                location = "Lab 1.1",
-                time = "11:00",
-                date = monday.toString(),
-                color = 0xFFD85D6AL,
-                iconIndex = 1,
-                repeatType = "Weekly"
-            ),
-            ScheduleEvent(
-                id = "mock3",
-                name = "Software Engineering",
-                location = "Auditorium A",
-                time = "13:00",
-                date = monday.toString(),
-                color = 0xFF42A5F5L,
-                iconIndex = 2,
-                repeatType = "Weekly"
-            ),
-            // Tuesday
-            ScheduleEvent(
-                id = "mock4",
-                name = "Computer Networks",
-                location = "Room 305",
-                time = "09:30",
-                date = tuesday.toString(),
-                color = 0xFFE9B25AL,
-                iconIndex = 3,
-                repeatType = "Weekly"
-            ),
-            ScheduleEvent(
-                id = "mock5",
-                name = "Database Systems",
-                location = "Room 202",
-                time = "11:30",
-                date = tuesday.toString(),
-                color = 0xFF4DB6ACL,
-                iconIndex = 4,
-                repeatType = "Weekly"
-            ),
-            ScheduleEvent(
-                id = "mock6",
-                name = "Mobile Applications",
-                location = "Room 402",
-                time = "14:30",
-                date = tuesday.toString(),
-                color = 0xFF3022A6L,
-                iconIndex = 0,
-                repeatType = "Weekly"
-            ),
-            // Wednesday
-            ScheduleEvent(
-                id = "mock7",
-                name = "Software Engineering",
-                location = "Auditorium A",
-                time = "09:30",
-                date = wednesday.toString(),
-                color = 0xFF42A5F5L,
-                iconIndex = 2,
-                repeatType = "Weekly"
-            ),
-            ScheduleEvent(
-                id = "mock8",
-                name = "Operating Systems",
-                location = "Lab 1.1",
-                time = "11:00",
-                date = wednesday.toString(),
-                color = 0xFFD85D6AL,
-                iconIndex = 1,
-                repeatType = "Weekly"
-            ),
-            ScheduleEvent(
-                id = "mock9",
-                name = "Artificial Intelligence",
-                location = "Room 101",
-                time = "13:00",
-                date = wednesday.toString(),
-                color = 0xFFE9B25AL,
-                iconIndex = 3,
-                repeatType = "Weekly"
-            ),
-            // Thursday
-            ScheduleEvent(
-                id = "mock10",
-                name = "Computer Networks",
-                location = "Room 305",
-                time = "09:30",
-                date = thursday.toString(),
-                color = 0xFFE9B25AL,
-                iconIndex = 3,
-                repeatType = "Weekly"
-            ),
-            ScheduleEvent(
-                id = "mock11",
-                name = "Spanish Language",
-                location = "Room 501",
-                time = "11:30",
-                date = thursday.toString(),
-                color = 0xFF81C784L,
-                iconIndex = 4,
-                repeatType = "Weekly"
-            ),
-            ScheduleEvent(
-                id = "mock12",
-                name = "Ethics in Engineering",
-                location = "Room 205",
-                time = "14:00",
-                date = thursday.toString(),
-                color = 0xFF3022A6L,
-                iconIndex = 0,
-                repeatType = "Weekly"
-            ),
-            // Friday
-            ScheduleEvent(
-                id = "mock13",
-                name = "Distributed Systems",
-                location = "Lab 2.3",
-                time = "10:00",
-                date = friday.toString(),
-                color = 0xFF4DB6ACL,
-                iconIndex = 5,
-                repeatType = "Weekly"
-            ),
-            ScheduleEvent(
-                id = "mock14",
-                name = "Capstone Project",
-                location = "Meeting Room",
-                time = "13:00",
-                date = friday.toString(),
-                color = 0xFFD85D6AL,
-                iconIndex = 1,
-                repeatType = "Weekly"
-            )
-        )
-        allActivities.addAll(mockEvents)
-        // Schedule alarms for mock data
-        mockEvents.forEach { notificationHelper.scheduleExactAlarm(it) }
     }
 
     fun fetchScheduleFromFirebase() {
@@ -247,9 +83,6 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                 notificationHelper.cancelAlarm(event)
                 notificationRepository.deleteNotificationByEventId(event.id)
                 fetchScheduleFromFirebase()
-            } else if (event.id.startsWith("mock")) {
-                notificationHelper.cancelAlarm(event)
-                allActivities.remove(event)
             }
         }
     }
@@ -269,15 +102,9 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                     deleteEvent(event)
                 } else {
                     val updatedEvent = event.copy(date = newStartDate.toString())
-                    if (!event.id.startsWith("mock")) {
-                        repository.postEvent(updatedEvent)
-                        notificationHelper.scheduleExactAlarm(updatedEvent)
-                        fetchScheduleFromFirebase()
-                    } else {
-                        allActivities.remove(event)
-                        allActivities.add(updatedEvent)
-                        notificationHelper.scheduleExactAlarm(updatedEvent)
-                    }
+                    allActivities.remove(event)
+                    allActivities.add(updatedEvent)
+                    notificationHelper.scheduleExactAlarm(updatedEvent)
                 }
             } else {
                 val beforeEndDate = date.minusDays(1).toString()
@@ -289,31 +116,17 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
                 val updatedOriginal = event.copy(endDate = beforeEndDate)
                 
-                if (!event.id.startsWith("mock")) {
-                    repository.postEvent(updatedOriginal)
-                    notificationHelper.scheduleExactAlarm(updatedOriginal)
-                } else {
-                    allActivities.remove(event)
-                    allActivities.add(updatedOriginal)
-                    notificationHelper.scheduleExactAlarm(updatedOriginal)
-                }
+                allActivities.remove(event)
+                allActivities.add(updatedOriginal)
+                notificationHelper.scheduleExactAlarm(updatedOriginal)
 
                 if (event.endDate == null || afterStartDate.isBefore(LocalDate.parse(event.endDate).plusDays(1))) {
                     val newEvent = event.copy(
-                        id = if (event.id.startsWith("mock")) "mock_" + java.util.UUID.randomUUID().toString() else java.util.UUID.randomUUID().toString(),
+                        id = java.util.UUID.randomUUID().toString(),
                         date = afterStartDate.toString()
                     )
-                    if (!event.id.startsWith("mock")) {
-                        repository.postEvent(newEvent)
-                        notificationHelper.scheduleExactAlarm(newEvent)
-                    } else {
-                        allActivities.add(newEvent)
-                        notificationHelper.scheduleExactAlarm(newEvent)
-                    }
-                }
-                
-                if (!event.id.startsWith("mock")) {
-                    fetchScheduleFromFirebase()
+                    allActivities.add(newEvent)
+                    notificationHelper.scheduleExactAlarm(newEvent)
                 }
             }
         }
